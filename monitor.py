@@ -146,27 +146,56 @@ def post_to_teams(alerts: list):
     today  = date.today().strftime("%B %d, %Y")
     n      = len(alerts)
 
-    # Build a plain text summary for the Power Automate workflow
-    # Power Automate Workflows webhook expects {"text": "..."} or {"message": "..."}
-    lines = []
+    # Build Adaptive Card body rows
+    fact_rows = []
     for a in alerts:
         urgency   = "🚨" if a["pct_away"] < 3 else "⚠️" if a["pct_away"] < 7 else "📌"
         direction = "▲ Upside" if a["target_type"] == "upside" else "▼ Downside"
-        lines.append(
-            f"{urgency} **{a['ticker']}** — Live: {a['currency']} {a['price']:.2f} | "
-            f"{direction}: {a['currency']} {a['target_price']:.2f} | "
-            f"**{a['pct_away']:.1f}% away** (target set {a['target_date']})"
-        )
+        fact_rows.append({
+            "type": "ColumnSet",
+            "columns": [
+                {"type": "Column", "width": "auto", "items": [{"type": "TextBlock", "text": f"{urgency} **{a['ticker']}**", "wrap": True}]},
+                {"type": "Column", "width": "stretch", "items": [{"type": "TextBlock", "text": f"Live: {a['currency']} {a['price']:.2f}  |  {direction}: {a['currency']} {a['target_price']:.2f}  |  **{a['pct_away']:.1f}% away**", "wrap": True}]},
+            ]
+        })
 
-    body = (
-        f"📊 **Contour Price Target Alert — {today}**\n\n"
-        f"{n} ticker{'s are' if n > 1 else ' is'} within {int(THRESHOLD*100)}% of a price target:\n\n"
-        + "\n".join(lines)
-        + "\n\n_One alert per ticker per day · Source: Contour-Price-Targets.csv_"
-    )
+    # Adaptive Card JSON — this is what Power Automate's "Post card" action expects
+    adaptive_card = {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": [
+            {
+                "type": "TextBlock",
+                "text": f"📊 Contour Price Target Alert — {today}",
+                "size": "Large",
+                "weight": "Bolder",
+                "wrap": True
+            },
+            {
+                "type": "TextBlock",
+                "text": f"{n} ticker{'s are' if n > 1 else ' is'} within {int(THRESHOLD*100)}% of a price target:",
+                "wrap": True,
+                "spacing": "Small"
+            },
+            {"type": "Separator"},
+            *fact_rows,
+            {"type": "Separator"},
+            {
+                "type": "TextBlock",
+                "text": "One alert per ticker per day  ·  Source: Contour-Price-Targets.csv",
+                "size": "Small",
+                "isSubtle": True,
+                "wrap": True
+            }
+        ]
+    }
 
-    # Power Automate Workflows webhook payload
-    payload = {"text": body}
+    # Power Automate flow uses string(variables('Body')) for the Adaptive Card
+    # Send the Adaptive Card JSON string in a 'body' field
+    payload = {
+        "body": json.dumps(adaptive_card)
+    }
 
     resp = requests.post(
         TEAMS_WEBHOOK_URL,
