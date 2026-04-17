@@ -1,0 +1,29 @@
+name: Price Target Monitor
+
+on:
+  schedule:
+    # Runs every 4 hours (GitHub Actions uses UTC)
+    - cron: '0 */4 * * *'
+  workflow_dispatch:   # lets you also trigger it manually from GitHub UI
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run price check
+        env:
+          SHAREPOINT_SHARE_URL: ${{ secrets.SHAREPOINT_SHARE_URL }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: python monitor.py --once
