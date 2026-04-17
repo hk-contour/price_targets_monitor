@@ -142,44 +142,33 @@ def mark_alerted(data: dict, ticker: str):
 # STEP 4: POST TO TEAMS
 # ─────────────────────────────────────────────────────
 
-def build_card(chunk: list, today: str, part: int, total: int) -> dict:
-    rows = []
-    for a in chunk:
-        urgency   = "🚨" if a["pct_away"] < 3 else "⚠️" if a["pct_away"] < 7 else "📌"
-        direction = "▲ Upside" if a["target_type"] == "upside" else "▼ Downside"
-        rows.append({
-            "type": "ColumnSet",
-            "columns": [
-                {"type": "Column", "width": "auto",     "items": [{"type": "TextBlock", "text": f"{urgency} **{a['ticker']}**", "wrap": True}]},
-                {"type": "Column", "width": "stretch",  "items": [{"type": "TextBlock", "text": f"Live: {a['currency']} {a['price']:.2f}  |  {direction}: {a['currency']} {a['target_price']:.2f}  |  **{a['pct_away']:.1f}% away**", "wrap": True}]},
-            ]
-        })
-    title = f"📊 Contour Price Target Alert — {today}"
+def build_message(chunk: list, today: str, part: int, total: int) -> str:
+    title = f"Contour Price Target Alert — {today}"
     if total > 1:
         title += f" ({part}/{total})"
-    return {
-        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-        "type":    "AdaptiveCard",
-        "version": "1.4",
-        "body": [
-            {"type": "TextBlock", "text": title, "size": "Large", "weight": "Bolder", "wrap": True},
-            {"type": "Separator"},
-            *rows,
-            {"type": "Separator"},
-            {"type": "TextBlock", "text": "One alert per ticker per day  ·  Source: Contour-Price-Targets.csv", "size": "Small", "isSubtle": True, "wrap": True},
-        ]
-    }
+
+    lines = [f"**{title}**", ""]
+    for a in chunk:
+        direction = "Upside" if a["target_type"] == "upside" else "Downside"
+        lines.append(
+            f"**{a['ticker']}** — "
+            f"Live: {a['currency']} {a['price']:.2f} | "
+            f"{direction}: {a['currency']} {a['target_price']:.2f} | "
+            f"{a['pct_away']:.1f}% away"
+        )
+    lines += ["", "One alert per ticker per day | Source: Contour-Price-Targets.csv"]
+    return "\n".join(lines)
 
 
 def post_to_teams(alerts: list):
     alerts  = sorted(alerts, key=lambda x: x["pct_away"])
     today   = date.today().strftime("%B %d, %Y")
-    chunks  = [alerts[i:i+15] for i in range(0, len(alerts), 15)]
+    chunks  = [alerts[i:i+20] for i in range(0, len(alerts), 20)]
     total   = len(chunks)
 
     for i, chunk in enumerate(chunks, 1):
-        card    = build_card(chunk, today, i, total)
-        payload = {"body": json.dumps(card)}
+        message = build_message(chunk, today, i, total)
+        payload = {"body": message}
 
         resp = requests.post(
             TEAMS_WEBHOOK_URL,
