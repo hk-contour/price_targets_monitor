@@ -13,6 +13,7 @@ import os
 import json
 import logging
 import sys
+import time
 from datetime import date, datetime
 
 import pandas as pd
@@ -141,74 +142,59 @@ def mark_alerted(data: dict, ticker: str):
 # STEP 4: POST TO TEAMS
 # ─────────────────────────────────────────────────────
 
-def post_to_teams(alerts: list):
-    alerts = sorted(alerts, key=lambda x: x["pct_away"])
-    today  = date.today().strftime("%B %d, %Y")
-    n      = len(alerts)
-
-    # Build Adaptive Card body rows
-    fact_rows = []
-    for a in alerts:
+def build_card(chunk: list, today: str, part: int, total: int) -> dict:
+    rows = []
+    for a in chunk:
         urgency   = "🚨" if a["pct_away"] < 3 else "⚠️" if a["pct_away"] < 7 else "📌"
         direction = "▲ Upside" if a["target_type"] == "upside" else "▼ Downside"
-        fact_rows.append({
+        rows.append({
             "type": "ColumnSet",
             "columns": [
-                {"type": "Column", "width": "auto", "items": [{"type": "TextBlock", "text": f"{urgency} **{a['ticker']}**", "wrap": True}]},
-                {"type": "Column", "width": "stretch", "items": [{"type": "TextBlock", "text": f"Live: {a['currency']} {a['price']:.2f}  |  {direction}: {a['currency']} {a['target_price']:.2f}  |  **{a['pct_away']:.1f}% away**", "wrap": True}]},
+                {"type": "Column", "width": "auto",     "items": [{"type": "TextBlock", "text": f"{urgency} **{a['ticker']}**", "wrap": True}]},
+                {"type": "Column", "width": "stretch",  "items": [{"type": "TextBlock", "text": f"Live: {a['currency']} {a['price']:.2f}  |  {direction}: {a['currency']} {a['target_price']:.2f}  |  **{a['pct_away']:.1f}% away**", "wrap": True}]},
             ]
         })
-
-    # Adaptive Card JSON — this is what Power Automate's "Post card" action expects
-    adaptive_card = {
+    title = f"📊 Contour Price Target Alert — {today}"
+    if total > 1:
+        title += f" ({part}/{total})"
+    return {
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-        "type": "AdaptiveCard",
+        "type":    "AdaptiveCard",
         "version": "1.4",
         "body": [
-            {
-                "type": "TextBlock",
-                "text": f"📊 Contour Price Target Alert — {today}",
-                "size": "Large",
-                "weight": "Bolder",
-                "wrap": True
-            },
-            {
-                "type": "TextBlock",
-                "text": f"{n} ticker{'s are' if n > 1 else ' is'} within {int(THRESHOLD*100)}% of a price target:",
-                "wrap": True,
-                "spacing": "Small"
-            },
+            {"type": "TextBlock", "text": title, "size": "Large", "weight": "Bolder", "wrap": True},
             {"type": "Separator"},
-            *fact_rows,
+            *rows,
             {"type": "Separator"},
-            {
-                "type": "TextBlock",
-                "text": "One alert per ticker per day  ·  Source: Contour-Price-Targets.csv",
-                "size": "Small",
-                "isSubtle": True,
-                "wrap": True
-            }
+            {"type": "TextBlock", "text": "One alert per ticker per day  ·  Source: Contour-Price-Targets.csv", "size": "Small", "isSubtle": True, "wrap": True},
         ]
     }
 
-    # Power Automate flow uses string(variables('Body')) for the Adaptive Card
-    # Send the Adaptive Card JSON string in a 'body' field
-    payload = {
-        "body": json.dumps(adaptive_card)
-    }
 
-    resp = requests.post(
-        TEAMS_WEBHOOK_URL,
-        json=payload,
-        headers={"Content-Type": "application/json"},
-        timeout=15,
-    )
+def post_to_teams(alerts: list):
+    alerts  = sorted(alerts, key=lambda x: x["pct_away"])
+    today   = date.today().strftime("%B %d, %Y")
+    chunks  = [alerts[i:i+15] for i in range(0, len(alerts), 15)]
+    total   = len(chunks)
 
-    if resp.status_code in (200, 202):
-        log.info(f"Teams message posted for {[a['ticker'] for a in alerts]}")
-    else:
-        log.error(f"Teams webhook failed: HTTP {resp.status_code} — {resp.text}")
-        raise RuntimeError(f"Teams webhook error: {resp.status_code}")
+    for i, chunk in enumerate(chunks, 1):
+        card    = build_card(chunk, today, i, total)
+        payload = {"body": json.dumps(card)}
+
+        resp = requests.post(
+            TEAMS_WEBHOOK_URL,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=15,
+        )
+        if resp.status_code in (200, 202):
+            log.info(f"Teams chunk {i}/{total} posted: {[a['ticker'] for a in chunk]}")
+        else:
+            log.error(f"Teams webhook failed chunk {i}: HTTP {resp.status_code} — {resp.text}")
+            raise RuntimeError(f"Teams webhook error: {resp.status_code}")
+
+        if i < total:
+            time.sleep(2)
 
 
 # ─────────────────────────────────────────────────────
