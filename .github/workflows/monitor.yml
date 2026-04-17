@@ -1,0 +1,25 @@
+name: Price Target Monitor
+
+on:
+  schedule:
+    - cron: '0 9,13,17,21 * * 1-5'  # 9am, 1pm, 5pm, 9pm UTC on weekdays
+                                      # = 5am, 9am, 1pm, 5pm ET
+  workflow_dispatch:                  # also run manually from GitHub UI
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run price check
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: python monitor.py
