@@ -23,7 +23,7 @@ import requests
 # CONFIG
 # ─────────────────────────────────────────────────────
 
-TEAMS_WEBHOOK_URL = os.environ["TEAMS_WEBHOOK_URL"]  # GitHub Secret
+TEAMS_WEBHOOK_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
 CSV_PATH      = "Contour-Price-Targets.csv"
 ALERT_LOG     = "alerts_sent.json"
@@ -146,90 +146,36 @@ def post_to_teams(alerts: list):
     today  = date.today().strftime("%B %d, %Y")
     n      = len(alerts)
 
-    # Build rows for the Teams Adaptive Card table
-    rows = []
+    # Build a plain text summary for the Power Automate workflow
+    # Power Automate Workflows webhook expects {"text": "..."} or {"message": "..."}
+    lines = []
     for a in alerts:
-        direction = "▲ Upside"   if a["target_type"] == "upside"    else "▼ Downside"
-        emoji     = "🟢"          if a["target_type"] == "upside"    else "🔴"
-        urgency   = "🚨"          if a["pct_away"] < 3               else "⚠️" if a["pct_away"] < 7 else "📌"
-        rows.append({
-            "type": "TableRow",
-            "cells": [
-                {"type": "TableCell", "items": [{"type": "TextBlock", "text": f"{urgency} **{a['ticker']}**", "wrap": True}]},
-                {"type": "TableCell", "items": [{"type": "TextBlock", "text": f"{a['currency']} {a['price']:.2f}", "wrap": True}]},
-                {"type": "TableCell", "items": [{"type": "TextBlock", "text": f"{emoji} {direction}", "wrap": True}]},
-                {"type": "TableCell", "items": [{"type": "TextBlock", "text": f"{a['currency']} {a['target_price']:.2f}", "wrap": True}]},
-                {"type": "TableCell", "items": [{"type": "TextBlock", "text": f"**{a['pct_away']:.1f}% away**", "wrap": True}]},
-            ]
-        })
+        urgency   = "🚨" if a["pct_away"] < 3 else "⚠️" if a["pct_away"] < 7 else "📌"
+        direction = "▲ Upside" if a["target_type"] == "upside" else "▼ Downside"
+        lines.append(
+            f"{urgency} **{a['ticker']}** — Live: {a['currency']} {a['price']:.2f} | "
+            f"{direction}: {a['currency']} {a['target_price']:.2f} | "
+            f"**{a['pct_away']:.1f}% away** (target set {a['target_date']})"
+        )
 
-    card = {
-        "type": "message",
-        "attachments": [{
-            "contentType": "application/vnd.microsoft.card.adaptive",
-            "content": {
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "type":    "AdaptiveCard",
-                "version": "1.4",
-                "body": [
-                    {
-                        "type":   "TextBlock",
-                        "text":   f"📊 Contour Price Target Alert — {today}",
-                        "size":   "Large",
-                        "weight": "Bolder",
-                        "color":  "Accent",
-                        "wrap":   True,
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": f"{n} ticker{'s are' if n > 1 else ' is'} within {int(THRESHOLD*100)}% of a price target.",
-                        "wrap": True,
-                        "spacing": "Small",
-                    },
-                    {
-                        "type":    "Table",
-                        "columns": [
-                            {"width": 2}, {"width": 2},
-                            {"width": 2}, {"width": 2}, {"width": 2},
-                        ],
-                        "rows": [
-                            {
-                                "type":  "TableRow",
-                                "style": "accent",
-                                "cells": [
-                                    {"type": "TableCell", "items": [{"type": "TextBlock", "text": "Ticker",      "weight": "Bolder", "wrap": True}]},
-                                    {"type": "TableCell", "items": [{"type": "TextBlock", "text": "Live Price",  "weight": "Bolder", "wrap": True}]},
-                                    {"type": "TableCell", "items": [{"type": "TextBlock", "text": "Target",      "weight": "Bolder", "wrap": True}]},
-                                    {"type": "TableCell", "items": [{"type": "TextBlock", "text": "Target $",    "weight": "Bolder", "wrap": True}]},
-                                    {"type": "TableCell", "items": [{"type": "TextBlock", "text": "Distance",    "weight": "Bolder", "wrap": True}]},
-                                ]
-                            },
-                            *rows,
-                        ],
-                        "spacing": "Medium",
-                    },
-                    {
-                        "type":    "TextBlock",
-                        "text":    "One alert per ticker per day  ·  Source: Contour-Price-Targets.csv",
-                        "size":    "Small",
-                        "color":   "Default",
-                        "isSubtle": True,
-                        "wrap":    True,
-                        "spacing": "Medium",
-                    },
-                ],
-            }
-        }]
-    }
+    body = (
+        f"📊 **Contour Price Target Alert — {today}**\n\n"
+        f"{n} ticker{'s are' if n > 1 else ' is'} within {int(THRESHOLD*100)}% of a price target:\n\n"
+        + "\n".join(lines)
+        + "\n\n_One alert per ticker per day · Source: Contour-Price-Targets.csv_"
+    )
+
+    # Power Automate Workflows webhook payload
+    payload = {"text": body}
 
     resp = requests.post(
         TEAMS_WEBHOOK_URL,
-        json=card,
+        json=payload,
         headers={"Content-Type": "application/json"},
         timeout=15,
     )
 
-    if resp.status_code == 200:
+    if resp.status_code in (200, 202):
         log.info(f"Teams message posted for {[a['ticker'] for a in alerts]}")
     else:
         log.error(f"Teams webhook failed: HTTP {resp.status_code} — {resp.text}")
