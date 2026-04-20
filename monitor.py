@@ -2,11 +2,10 @@
 """
 Contour Price Target Monitor
 - Reads Contour-Price-Targets.csv from the repo
-- For each ticker: uses the most recent BeginDate row
-- Checks live price via yfinance
-- Posts to Microsoft Teams if price is within 10% of upside OR downside
-- One alert per ticker per calendar day
-- Runs every 4 hours via GitHub Actions
+- Only includes tickers where the target was set within the past 2 years
+- Checks live price via yfinance; alerts if within 10% of upside or downside
+- Calculates 14-day RSI per ticker
+- Sends HTML table via Teams webhook (Power Automate) once per day at 10am ET
 """
 
 import os
@@ -14,7 +13,7 @@ import json
 import logging
 import sys
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 import yfinance as yf
@@ -26,9 +25,10 @@ import requests
 
 TEAMS_WEBHOOK_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
-CSV_PATH      = "Contour-Price-Targets.csv"
-ALERT_LOG     = "alerts_sent.json"
-THRESHOLD     = 0.10   # 10%
+CSV_PATH        = "Contour-Price-Targets.csv"
+ALERT_LOG       = "alerts_sent.json"
+THRESHOLD       = 0.10    # 10%
+MAX_TARGET_AGE  = 365 * 2 # Only include targets set within 2 years
 
 # Tickers that need yfinance exchange suffixes
 TICKER_MAP = {
@@ -55,7 +55,7 @@ log = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────
-# STEP 1: LOAD TARGETS
+# STEP 1: LOAD TARGETS (2-year filter)
 # ─────────────────────────────────────────────────────
 
 def load_targets(path: str) -> dict:
@@ -65,20 +65,30 @@ def load_targets(path: str) -> dict:
     df["Issuer"]    = df["Issuer"].astype(str).str.strip().str.upper()
     df = df.sort_values("BeginDate", ascending=False).drop_duplicates("Issuer", keep="first")
 
+    cutoff = date.today() - timedelta(days=MAX_TARGET_AGE)
     targets = {}
+    skipped_old = []
+
     for _, row in df.iterrows():
         ticker   = row["Issuer"]
+        tgt_date = row["BeginDate"].date()
+
+        if tgt_date < cutoff:
+            skipped_old.append(ticker)
+            continue
+
         upside   = _to_float(row.get("Upside Price Target"))
         downside = _to_float(row.get("Downside Price Target"))
         if upside is None and downside is None:
             continue
+
         targets[ticker] = {
             "upside":   upside,
             "downside": downside,
-            "date":     row["BeginDate"].strftime("%Y-%m-%d"),
+            "date":     tgt_date.strftime("%Y-%m-%d"),
         }
 
-    log.info(f"Loaded {len(targets)} tickers.")
+    log.info(f"Loaded {len(targets)} tickers (skipped {len(skipped_old)} older than 2 years).")
     return targets
 
 
@@ -91,27 +101,38 @@ def _to_float(v):
 
 
 # ─────────────────────────────────────────────────────
-# STEP 2: FETCH LIVE PRICES
+# STEP 2: FETCH LIVE PRICE + RSI
 # ─────────────────────────────────────────────────────
 
-def fetch_price(ticker: str):
+def compute_rsi(closes: pd.Series, period: int = 14) -> float:
+    delta    = closes.diff()
+    gain     = delta.clip(lower=0)
+    loss     = -delta.clip(upper=0)
+    avg_gain = gain.ewm(com=period - 1, min_periods=period).mean()
+    avg_loss = loss.ewm(com=period - 1, min_periods=period).mean()
+    rs       = avg_gain / avg_loss.replace(0, float("inf"))
+    rsi      = 100 - (100 / (1 + rs))
+    return round(float(rsi.iloc[-1]), 1)
+
+
+def fetch_price_and_rsi(ticker: str):
     if ticker in SKIP:
-        return None, None
+        return None, None, None
     sym = TICKER_MAP.get(ticker, ticker)
     try:
-        t     = yf.Ticker(sym)
-        fi    = t.fast_info
-        price = getattr(fi, "last_price", None)
-        if not price or price <= 0:
-            hist = t.history(period="2d", auto_adjust=True)
-            if hist.empty:
-                log.warning(f"{ticker}: no price data.")
-                return None, None
-            price = float(hist["Close"].iloc[-1])
-        return float(price), str(getattr(fi, "currency", "USD") or "USD")
+        t    = yf.Ticker(sym)
+        hist = t.history(period="60d", auto_adjust=True)
+        if hist.empty or len(hist) < 15:
+            log.warning(f"{ticker}: insufficient history.")
+            return None, None, None
+        price    = float(hist["Close"].iloc[-1])
+        rsi      = compute_rsi(hist["Close"])
+        fi       = t.fast_info
+        currency = str(getattr(fi, "currency", "USD") or "USD")
+        return price, currency, rsi
     except Exception as e:
-        log.warning(f"{ticker}: fetch error — {e}")
-        return None, None
+        log.warning(f"{ticker}: fetch error - {e}")
+        return None, None, None
 
 
 # ─────────────────────────────────────────────────────
@@ -139,17 +160,37 @@ def mark_alerted(data: dict, ticker: str):
 
 
 # ─────────────────────────────────────────────────────
-# STEP 4: POST TO TEAMS
+# STEP 4: BUILD HTML + POST TO TEAMS
 # ─────────────────────────────────────────────────────
 
+def rsi_label(rsi):
+    if rsi is None:
+        return "N/A"
+    if rsi >= 70:
+        return f"{rsi} (Overbought)"
+    if rsi <= 30:
+        return f"{rsi} (Oversold)"
+    return str(rsi)
+
+def rsi_color(rsi):
+    if rsi is None:
+        return "#888"
+    if rsi >= 70:
+        return "#c0392b"
+    if rsi <= 30:
+        return "#27ae60"
+    return "#333"
+
+
 def build_html_table(chunk: list, today: str, part: int, total: int) -> str:
-    title = f"Contour Price Target Alert — {today}"
+    title = f"Contour Price Target Alert - {today}"
     if total > 1:
         title += f" ({part}/{total})"
 
     rows = ""
     for a in chunk:
         direction = "Upside" if a["target_type"] == "upside" else "Downside"
+        rsi       = a.get("rsi")
         rows += (
             f"<tr>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['ticker']}</b></td>"
@@ -157,13 +198,13 @@ def build_html_table(chunk: list, today: str, part: int, total: int) -> str:
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{direction}</td>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{a['currency']} {a['target_price']:.2f}</td>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['pct_away']:.1f}%</b></td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:{rsi_color(rsi)}'><b>{rsi_label(rsi)}</b></td>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:#888'>{a['target_date']}</td>"
             f"</tr>"
         )
 
     html = (
-        f"<p style='font-family:Arial,sans-serif'>"
-        f"<b style='font-size:16px'>{title}</b></p>"
+        f"<p style='font-family:Arial,sans-serif'><b style='font-size:16px'>{title}</b></p>"
         f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;width:100%'>"
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='padding:8px 12px;text-align:left'>Ticker</th>"
@@ -171,12 +212,14 @@ def build_html_table(chunk: list, today: str, part: int, total: int) -> str:
         f"<th style='padding:8px 12px;text-align:left'>Target</th>"
         f"<th style='padding:8px 12px;text-align:left'>Target Price</th>"
         f"<th style='padding:8px 12px;text-align:left'>Distance</th>"
+        f"<th style='padding:8px 12px;text-align:left'>RSI (14)</th>"
         f"<th style='padding:8px 12px;text-align:left'>Set On</th>"
         f"</tr>"
         f"{rows}"
         f"</table>"
         f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa'>"
-        f"One alert per ticker per day &nbsp;|&nbsp; Source: Contour-Price-Targets.csv</p>"
+        f"RSI &gt;70 = Overbought (red) | RSI &lt;30 = Oversold (green) | "
+        f"One alert per ticker per day | Source: Contour-Price-Targets.csv</p>"
     )
     return html
 
@@ -200,7 +243,7 @@ def post_to_teams(alerts: list):
         if resp.status_code in (200, 202):
             log.info(f"Teams chunk {i}/{total} posted: {[a['ticker'] for a in chunk]}")
         else:
-            log.error(f"Teams webhook failed chunk {i}: HTTP {resp.status_code} — {resp.text}")
+            log.error(f"Teams webhook failed chunk {i}: HTTP {resp.status_code} - {resp.text}")
             raise RuntimeError(f"Teams webhook error: {resp.status_code}")
 
         if i < total:
@@ -213,7 +256,7 @@ def post_to_teams(alerts: list):
 
 def run():
     log.info("=" * 55)
-    log.info(f"Check starting — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
+    log.info(f"Check starting - {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
 
     targets   = load_targets(CSV_PATH)
     alert_log = load_log()
@@ -229,7 +272,7 @@ def run():
         if already_alerted(alert_log, ticker):
             continue
 
-        price, currency = fetch_price(ticker)
+        price, currency, rsi = fetch_price_and_rsi(ticker)
 
         if price is None:
             if ticker not in SKIP:
@@ -241,22 +284,22 @@ def run():
         if upside is not None:
             pct = abs(price - upside) / upside * 100
             if pct <= THRESHOLD * 100:
-                log.info(f"  ALERT {ticker}: ${price:.2f}  upside=${upside}  {pct:.1f}% away")
+                log.info(f"  ALERT {ticker}: ${price:.2f}  upside=${upside}  {pct:.1f}% away  RSI={rsi}")
                 alerts_to_send.append({
                     "ticker": ticker, "price": price, "currency": currency,
                     "target_type": "upside", "target_price": upside,
-                    "pct_away": pct, "target_date": tgt_date,
+                    "pct_away": pct, "target_date": tgt_date, "rsi": rsi,
                 })
                 triggered = True
 
         if downside is not None:
             pct = abs(price - downside) / downside * 100
             if pct <= THRESHOLD * 100:
-                log.info(f"  ALERT {ticker}: ${price:.2f}  downside=${downside}  {pct:.1f}% away")
+                log.info(f"  ALERT {ticker}: ${price:.2f}  downside=${downside}  {pct:.1f}% away  RSI={rsi}")
                 alerts_to_send.append({
                     "ticker": ticker, "price": price, "currency": currency,
                     "target_type": "downside", "target_price": downside,
-                    "pct_away": pct, "target_date": tgt_date,
+                    "pct_away": pct, "target_date": tgt_date, "rsi": rsi,
                 })
                 triggered = True
 
