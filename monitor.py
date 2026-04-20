@@ -25,7 +25,8 @@ import requests
 # CONFIG
 # ─────────────────────────────────────────────────────
 
-TEAMS_WEBHOOK_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
+# Power Automate webhook — triggers email via "Send an email (V2)" action
+POWER_AUTOMATE_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
 CSV_PATH        = "Contour-Price-Targets.csv"
 ALERT_LOG       = "alerts_sent.json"
@@ -225,19 +226,20 @@ def build_html(alerts: list, today: str) -> str:
     )
 
 
-def post_to_teams(html: str):
+def send_alert(html: str):
+    """Send HTML payload to Power Automate which emails via Send an email (V2)."""
     payload = {"body": html}
     resp = requests.post(
-        TEAMS_WEBHOOK_URL,
+        POWER_AUTOMATE_URL,
         json=payload,
         headers={"Content-Type": "application/json"},
         timeout=15,
     )
     if resp.status_code in (200, 202):
-        log.info("Posted to Teams successfully.")
+        log.info("Payload sent to Power Automate successfully.")
     else:
-        log.error(f"Teams webhook failed: HTTP {resp.status_code} - {resp.text}")
-        raise RuntimeError(f"Teams webhook error: {resp.status_code}")
+        log.error(f"Power Automate webhook failed: HTTP {resp.status_code} - {resp.text}")
+        raise RuntimeError(f"Webhook error: {resp.status_code}")
 
 
 # ─────────────────────────────────────────────────────
@@ -301,7 +303,7 @@ def run():
     alerts_to_send = sorted(alerts_to_send, key=lambda x: x["pct_away"])
     today = date.today().strftime("%B %d, %Y")
     html  = build_html(alerts_to_send, today)
-    post_to_teams(html)
+    send_alert(html)
 
     log.info(
         f"Done. {len(targets)} tickers checked | "
