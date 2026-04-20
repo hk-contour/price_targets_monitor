@@ -4,9 +4,10 @@ Contour Price Target Monitor
 - Reads Contour-Price-Targets.csv from the repo
 - Only includes tickers where the target was set within the past 2 years
 - Alerts if live price is within 10% of upside or downside target
-- Suppresses repeat alerts for 2 days after first alert per ticker
+- One alert per ticker per calendar day
 - Calculates 14-day RSI per ticker
 - Sends a single HTML email+Teams post via Power Automate at 10am ET weekdays
+- Sends "no alerts" message if nothing qualifies
 """
 
 import os
@@ -26,11 +27,10 @@ import requests
 
 TEAMS_WEBHOOK_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
-CSV_PATH          = "Contour-Price-Targets.csv"
-ALERT_LOG         = "alerts_sent.json"
-THRESHOLD         = 0.10    # 10%
-MAX_TARGET_AGE    = 365 * 2 # Only targets set within 2 years
-SUPPRESS_DAYS     = 2       # Don't re-alert same ticker for 2 days
+CSV_PATH        = "Contour-Price-Targets.csv"
+ALERT_LOG       = "alerts_sent.json"
+THRESHOLD       = 0.10    # 10%
+MAX_TARGET_AGE  = 365 * 2 # Only targets set within 2 years
 
 TICKER_MAP = {
     "IFXGn": "IFX.DE", "AG1G":  "AG1.DE",    "SAPG": "SAP.DE",
@@ -137,7 +137,7 @@ def fetch_price_and_rsi(ticker: str):
 
 
 # ─────────────────────────────────────────────────────
-# STEP 3: ALERT LOG (2-day suppression)
+# STEP 3: DAILY DEDUP (once per ticker per calendar day)
 # ─────────────────────────────────────────────────────
 
 def load_log() -> dict:
@@ -148,58 +148,50 @@ def load_log() -> dict:
 
 
 def save_log(data: dict):
-    # Prune entries older than 30 days
-    cutoff = date.today().toordinal() - 30
+    cutoff = date.today().toordinal() - 14
     data   = {k: v for k, v in data.items()
               if date.fromisoformat(k).toordinal() >= cutoff}
     with open(ALERT_LOG, "w") as f:
         json.dump(data, f, indent=2)
 
 
-def is_suppressed(alert_log: dict, ticker: str) -> bool:
-    """Returns True if ticker was alerted within the past SUPPRESS_DAYS days."""
-    today = date.today()
-    for i in range(SUPPRESS_DAYS):
-        check_date = (today - timedelta(days=i)).isoformat()
-        if alert_log.get(check_date, {}).get(ticker, False):
-            return True
-    return False
+def already_alerted(data: dict, ticker: str) -> bool:
+    return data.get(date.today().isoformat(), {}).get(ticker, False)
 
 
-def mark_alerted(alert_log: dict, ticker: str):
-    today = date.today().isoformat()
-    alert_log.setdefault(today, {})[ticker] = True
+def mark_alerted(data: dict, ticker: str):
+    data.setdefault(date.today().isoformat(), {})[ticker] = True
 
 
 # ─────────────────────────────────────────────────────
-# STEP 4: BUILD HTML TABLE (single message, no chunking)
+# STEP 4: BUILD HTML + POST TO TEAMS
 # ─────────────────────────────────────────────────────
-
-def rsi_label(rsi):
-    if rsi is None:
-        return "N/A"
-    if rsi >= 70:
-        return f"{rsi} (Overbought)"
-    if rsi <= 30:
-        return f"{rsi} (Oversold)"
-    return str(rsi)
-
 
 def rsi_color(rsi):
     if rsi is None:
         return "#888"
     if rsi >= 70:
-        return "#c0392b"
+        return "#c0392b"   # red — overbought
     if rsi <= 30:
-        return "#27ae60"
+        return "#27ae60"   # green — oversold
     return "#333"
 
 
 def build_html(alerts: list, today: str) -> str:
+    """Build a single HTML table for all alerts, or a no-alert message."""
+    if not alerts:
+        return (
+            f"<p style='font-family:Arial,sans-serif'>"
+            f"<b style='font-size:16px'>Contour Price Target Alert - {today}</b></p>"
+            f"<p style='font-family:Arial,sans-serif;font-size:14px'>"
+            f"No tickers within 10% of their upside/downside price target today.</p>"
+        )
+
     rows = ""
     for a in alerts:
         direction = "Upside" if a["target_type"] == "upside" else "Downside"
         rsi       = a.get("rsi")
+        rsi_str   = str(rsi) if rsi is not None else "N/A"
         rows += (
             f"<tr>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['ticker']}</b></td>"
@@ -207,7 +199,7 @@ def build_html(alerts: list, today: str) -> str:
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{direction}</td>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{a['currency']} {a['target_price']:.2f}</td>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['pct_away']:.1f}%</b></td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:{rsi_color(rsi)}'><b>{rsi_label(rsi)}</b></td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:{rsi_color(rsi)}'><b>{rsi_str}</b></td>"
             f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:#888'>{a['target_date']}</td>"
             f"</tr>"
         )
@@ -228,17 +220,13 @@ def build_html(alerts: list, today: str) -> str:
         f"{rows}"
         f"</table>"
         f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa'>"
-        f"RSI &gt;70 = Overbought (red) | RSI &lt;30 = Oversold (green) | "
-        f"Alerts suppressed for {SUPPRESS_DAYS} days after first trigger | "
+        f"RSI &gt;70 = red | RSI &lt;30 = green | "
         f"Source: Contour-Price-Targets.csv</p>"
     )
 
 
-def post_to_teams(alerts: list):
-    today   = date.today().strftime("%B %d, %Y")
-    html    = build_html(alerts, today)
+def post_to_teams(html: str):
     payload = {"body": html}
-
     resp = requests.post(
         TEAMS_WEBHOOK_URL,
         json=payload,
@@ -246,7 +234,7 @@ def post_to_teams(alerts: list):
         timeout=15,
     )
     if resp.status_code in (200, 202):
-        log.info(f"Posted {len(alerts)} alerts to Teams.")
+        log.info("Posted to Teams successfully.")
     else:
         log.error(f"Teams webhook failed: HTTP {resp.status_code} - {resp.text}")
         raise RuntimeError(f"Teams webhook error: {resp.status_code}")
@@ -271,8 +259,7 @@ def run():
         downside = info["downside"]
         tgt_date = info["date"]
 
-        if is_suppressed(alert_log, ticker):
-            log.debug(f"{ticker}: suppressed.")
+        if already_alerted(alert_log, ticker):
             continue
 
         price, currency, rsi = fetch_price_and_rsi(ticker)
@@ -311,11 +298,10 @@ def run():
 
     save_log(alert_log)
 
-    if alerts_to_send:
-        alerts_to_send = sorted(alerts_to_send, key=lambda x: x["pct_away"])
-        post_to_teams(alerts_to_send)
-    else:
-        log.info("No alerts this run.")
+    alerts_to_send = sorted(alerts_to_send, key=lambda x: x["pct_away"])
+    today = date.today().strftime("%B %d, %Y")
+    html  = build_html(alerts_to_send, today)
+    post_to_teams(html)
 
     log.info(
         f"Done. {len(targets)} tickers checked | "
