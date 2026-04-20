@@ -2,9 +2,8 @@ name: Price Target Monitor
 
 on:
   schedule:
-    - cron: '0 9,13,17,21 * * 1-5'  # 9am, 1pm, 5pm, 9pm UTC on weekdays
-                                      # = 5am, 9am, 1pm, 5pm ET
-  workflow_dispatch:                  # also run manually from GitHub UI
+    - cron: '0 14 * * 1-5'   # 10:00 AM ET (14:00 UTC) weekdays only
+  workflow_dispatch:           # also run manually from GitHub UI
 
 jobs:
   check:
