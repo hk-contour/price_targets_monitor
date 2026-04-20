@@ -142,22 +142,43 @@ def mark_alerted(data: dict, ticker: str):
 # STEP 4: POST TO TEAMS
 # ─────────────────────────────────────────────────────
 
-def build_message(chunk: list, today: str, part: int, total: int) -> str:
+def build_html_table(chunk: list, today: str, part: int, total: int) -> str:
     title = f"Contour Price Target Alert — {today}"
     if total > 1:
         title += f" ({part}/{total})"
 
-    lines = [f"**{title}**", ""]
+    rows = ""
     for a in chunk:
         direction = "Upside" if a["target_type"] == "upside" else "Downside"
-        lines.append(
-            f"**{a['ticker']}** — "
-            f"Live: {a['currency']} {a['price']:.2f} | "
-            f"{direction}: {a['currency']} {a['target_price']:.2f} | "
-            f"{a['pct_away']:.1f}% away"
+        rows += (
+            f"<tr>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['ticker']}</b></td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{a['currency']} {a['price']:.2f}</td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{direction}</td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{a['currency']} {a['target_price']:.2f}</td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['pct_away']:.1f}%</b></td>"
+            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:#888'>{a['target_date']}</td>"
+            f"</tr>"
         )
-    lines += ["", "One alert per ticker per day | Source: Contour-Price-Targets.csv"]
-    return "\n".join(lines)
+
+    html = (
+        f"<p style='font-family:Arial,sans-serif'>"
+        f"<b style='font-size:16px'>{title}</b></p>"
+        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;width:100%'>"
+        f"<tr style='background:#1a3c6e;color:white'>"
+        f"<th style='padding:8px 12px;text-align:left'>Ticker</th>"
+        f"<th style='padding:8px 12px;text-align:left'>Live Price</th>"
+        f"<th style='padding:8px 12px;text-align:left'>Target</th>"
+        f"<th style='padding:8px 12px;text-align:left'>Target Price</th>"
+        f"<th style='padding:8px 12px;text-align:left'>Distance</th>"
+        f"<th style='padding:8px 12px;text-align:left'>Set On</th>"
+        f"</tr>"
+        f"{rows}"
+        f"</table>"
+        f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa'>"
+        f"One alert per ticker per day &nbsp;|&nbsp; Source: Contour-Price-Targets.csv</p>"
+    )
+    return html
 
 
 def post_to_teams(alerts: list):
@@ -167,8 +188,8 @@ def post_to_teams(alerts: list):
     total   = len(chunks)
 
     for i, chunk in enumerate(chunks, 1):
-        message = build_message(chunk, today, i, total)
-        payload = {"body": message}
+        html    = build_html_table(chunk, today, i, total)
+        payload = {"body": html}
 
         resp = requests.post(
             TEAMS_WEBHOOK_URL,
