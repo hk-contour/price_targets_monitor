@@ -28,7 +28,7 @@ POWER_AUTOMATE_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environme
 CSV_PATH       = "Contour-Price-Targets.csv"
 ALERT_LOG      = "alerts_sent.json"
 THRESHOLD      = 0.10
-MAX_TARGET_AGE = 365 * 2
+MAX_TARGET_AGE = 548      # 18 months
 
 TICKER_MAP = {
     # Germany (Xetra)
@@ -211,9 +211,9 @@ def fmt_rsi(rsi) -> str:
     if rsi is None:
         return "<span style='color:#ccc'>—</span>"
     if rsi >= 70:
-        return f"<span style='color:#c0392b;font-weight:600'>{rsi}</span>"
+        return f"<span style='color:#c0392b;font-weight:400'>{rsi}</span>"
     if rsi <= 30:
-        return f"<span style='color:#27ae60;font-weight:600'>{rsi}</span>"
+        return f"<span style='color:#27ae60;font-weight:400'>{rsi}</span>"
     return str(rsi)
 
 
@@ -234,14 +234,28 @@ def build_html(alerts: list, today: str) -> str:
 
     rows = ""
     for a in alerts:
+        px    = a["price"]
+        up_pt = a["upside_pt"]
+        dn_pt = a["downside_pt"]
+        up_dist = abs(px - up_pt) if up_pt else float("inf")
+        dn_dist = abs(px - dn_pt) if dn_pt else float("inf")
+        bold_up = up_dist <= dn_dist
+        bold_dn = dn_dist <  up_dist
+
+        def _pt(val, bold):
+            if val is None:
+                return "<span style='color:#ccc'>—</span>"
+            s = f"{val:.2f}"
+            return f"<b>{s}</b>" if bold else s
+
         rows += (
             f"<tr>"
             f"<td style='{td}'><b>{a['ticker']}</b></td>"
             f"<td style='{td};color:#555'>{a['alert_side'].capitalize()}</td>"
-            f"<td style='{td}'>{a['price']:.2f}</td>"
-            f"<td style='{td}'>{fmt_pt(a['downside_pt'])}</td>"
+            f"<td style='{td}'><b>{a['price']:.2f}</b></td>"
+            f"<td style='{td}'>{_pt(dn_pt, bold_dn)}</td>"
             f"<td style='{td}'>{fmt_pct(a['pct_downside'], a['crossed'] and a['alert_side'] == 'downside')}</td>"
-            f"<td style='{td}'>{fmt_pt(a['upside_pt'])}</td>"
+            f"<td style='{td}'>{_pt(up_pt, bold_up)}</td>"
             f"<td style='{td}'>{fmt_pct(a['pct_upside'],   a['crossed'] and a['alert_side'] == 'upside')}</td>"
             f"<td style='{td}'>{fmt_rsi(a['rsi'])}</td>"
             f"<td style='{td};color:#888;font-size:12px'>{a['target_date']}</td>"
