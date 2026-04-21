@@ -31,12 +31,23 @@ THRESHOLD      = 0.10
 MAX_TARGET_AGE = 365 * 2
 
 TICKER_MAP = {
-    "IFXGn": "IFX.DE", "AG1G":  "AG1.DE",    "SAPG": "SAP.DE",
-    "WISEa": "WISE.L",  "PUBP":  "PUB.L",     "RCIb": "RCI-B.TO",
-    "8136":  "8136.T",  "6098":  "6098.T",    "7974": "7974.T",
-    "7751":  "7751.T",  "4324":  "4324.T",    "2330": "2330.T",
-    "6981":  "6981.T",  "6963":  "6963.T",    "6857": "6857.T",
-    "4661":  "4661.T",  "6594":  "6594.T",
+    # Germany (Xetra)
+    "IFXGn": "IFX.DE",   "SAPG": "SAP.DE",
+    # Frankfurt
+    "AG1G":  "AG1.F",
+    # France (Euronext Paris)
+    "PUBP":  "PUB.PA",
+    # UK
+    "WISEa": "WISE.L",
+    # Canada
+    "RCIb":  "RCI-B.TO",
+    # Japan (Tokyo Stock Exchange)
+    "8136":  "8136.T",  "6098": "6098.T",   "7974": "7974.T",
+    "7751":  "7751.T",  "4324": "4324.T",   "6981": "6981.T",
+    "6963":  "6963.T",  "6857": "6857.T",   "4661": "4661.T",
+    "6594":  "6594.T",
+    # Taiwan (Taiwan Stock Exchange)
+    "2330":  "2330.TW",
 }
 
 SKIP = {
@@ -196,9 +207,8 @@ def build_html(alerts: list, today: str) -> str:
 
     rows = ""
     for a in alerts:
-        row_bg = "#fff5f5" if a["crossed"] else "white"
         rows += (
-            f"<tr style='background:{row_bg}'>"
+            f"<tr>"
             f"<td style='{td}'><b>{a['ticker']}</b></td>"
             f"<td style='{td}'>{a['price']:.2f}</td>"
             f"<td style='{td}'>{fmt_pt(a['downside_pt'])}</td>"
@@ -218,7 +228,7 @@ def build_html(alerts: list, today: str) -> str:
         f"<thead>"
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='{th}'>Ticker</th>"
-        f"<th style='{th}'>PX</th>"
+        f"<th style='{th}'>Price</th>"
         f"<th style='{th}'>Downside PT</th>"
         f"<th style='{th}'>Upside PT</th>"
         f"<th style='{th}'>% Downside</th>"
@@ -324,10 +334,16 @@ def run():
 
     save_log(alert_log)
 
-    # Crossed first, then by closest absolute %
+    # Sort: most extreme crossed first (most negative pct), then approaching by closest %
     def sort_key(a):
         pct = a["pct_upside"] if a["alert_side"] == "upside" else a["pct_downside"]
-        return (0 if a["crossed"] else 1, abs(pct) if pct is not None else 999)
+        pct = pct if pct is not None else 0
+        if a["crossed"]:
+            # Most negative (furthest past target) first — use pct as-is (negatives sort first)
+            return (0, pct)
+        else:
+            # Approaching: closest to target first
+            return (1, abs(pct))
 
     alerts_to_send.sort(key=sort_key)
 
