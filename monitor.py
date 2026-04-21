@@ -122,6 +122,33 @@ def compute_rsi(closes: pd.Series, period: int = 14) -> float:
     return round(float(rsi.iloc[-1]), 1)
 
 
+def get_split_adjustment(ticker: str, target_date_str: str) -> float:
+    """
+    Returns cumulative split factor for splits that occurred after target_date.
+    e.g. a 10:1 split returns 10.0, meaning targets should be divided by 10.
+    Only called when % away is suspiciously large (>20%).
+    """
+    sym = TICKER_MAP.get(ticker, ticker)
+    try:
+        from datetime import date as date_
+        tgt_date = datetime.strptime(target_date_str, "%m/%d/%Y").date()
+        splits   = yf.Ticker(sym).splits
+        if splits is None or splits.empty:
+            return 1.0
+        # Only splits after the target date
+        after = splits[splits.index.date > tgt_date]
+        if after.empty:
+            return 1.0
+        factor = 1.0
+        for ratio in after.values:
+            factor *= ratio
+        log.info(f"  {ticker}: split adjustment factor={factor:.4f} (splits after {tgt_date})")
+        return factor
+    except Exception as e:
+        log.warning(f"{ticker}: split check failed - {e}")
+        return 1.0
+
+
 def fetch_price_and_rsi(ticker: str):
     if ticker in SKIP:
         return None, None
@@ -299,6 +326,23 @@ def run():
         # Downside: negative = below target (crossed), positive = approaching from above
         pct_upside   = round((price - upside)   / upside   * 100, 1) if upside   else None
         pct_downside = round((price - downside) / downside * 100, 1) if downside else None
+
+        # If either % is suspiciously large (>20%), check for post-target splits
+        # and adjust targets accordingly
+        suspicious = (
+            (pct_upside   is not None and abs(pct_upside)   > 20) or
+            (pct_downside is not None and abs(pct_downside) > 20)
+        )
+        if suspicious:
+            factor = get_split_adjustment(ticker, tgt_date)
+            if factor != 1.0:
+                if upside:
+                    upside   = round(upside   / factor, 2)
+                if downside:
+                    downside = round(downside / factor, 2)
+                pct_upside   = round((price - upside)   / upside   * 100, 1) if upside   else None
+                pct_downside = round((price - downside) / downside * 100, 1) if downside else None
+                log.info(f"  {ticker}: targets adjusted for splits — up={upside} dn={downside}")
 
         triggered  = False
         crossed    = False
