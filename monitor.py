@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 """
 Contour Price Target Monitor
-- Reads Contour-Price-Targets.csv from the repo
-- Only includes tickers where the target was set within the past 2 years
-- Alerts if live price is within 10% of upside or downside target
+- Reads Contour-Price-Targets.csv (targets set within past 2 years)
+- Alerts if price is within 10% of OR has crossed upside/downside target
+- 14-day RSI per ticker
+- Signed % difference (not absolute value)
 - One alert per ticker per calendar day
-- Calculates 14-day RSI per ticker
-- Sends a single HTML email+Teams post via Power Automate at 10am ET weekdays
-- Sends "no alerts" message if nothing qualifies
+- Sends single HTML payload to Power Automate webhook at 10am ET weekdays
 """
 
 import os
 import json
 import logging
 import sys
-import time
 from datetime import date, datetime, timedelta
 
 import pandas as pd
@@ -25,13 +23,12 @@ import requests
 # CONFIG
 # ─────────────────────────────────────────────────────
 
-# Power Automate webhook — triggers email via "Send an email (V2)" action
 POWER_AUTOMATE_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
-CSV_PATH        = "Contour-Price-Targets.csv"
-ALERT_LOG       = "alerts_sent.json"
-THRESHOLD       = 0.10    # 10%
-MAX_TARGET_AGE  = 365 * 2 # Only targets set within 2 years
+CSV_PATH       = "Contour-Price-Targets.csv"
+ALERT_LOG      = "alerts_sent.json"
+THRESHOLD      = 0.10
+MAX_TARGET_AGE = 365 * 2
 
 TICKER_MAP = {
     "IFXGn": "IFX.DE", "AG1G":  "AG1.DE",    "SAPG": "SAP.DE",
@@ -67,30 +64,27 @@ def load_targets(path: str) -> dict:
     df["Issuer"]    = df["Issuer"].astype(str).str.strip().str.upper()
     df = df.sort_values("BeginDate", ascending=False).drop_duplicates("Issuer", keep="first")
 
-    cutoff      = date.today() - timedelta(days=MAX_TARGET_AGE)
-    targets     = {}
-    skipped_old = []
+    cutoff  = date.today() - timedelta(days=MAX_TARGET_AGE)
+    targets = {}
+    skipped = []
 
     for _, row in df.iterrows():
         ticker   = row["Issuer"]
         tgt_date = row["BeginDate"].date()
-
         if tgt_date < cutoff:
-            skipped_old.append(ticker)
+            skipped.append(ticker)
             continue
-
         upside   = _to_float(row.get("Upside Price Target"))
         downside = _to_float(row.get("Downside Price Target"))
         if upside is None and downside is None:
             continue
-
         targets[ticker] = {
             "upside":   upside,
             "downside": downside,
-            "date":     tgt_date.strftime("%Y-%m-%d"),
+            "date":     tgt_date.strftime("%m/%d/%Y"),
         }
 
-    log.info(f"Loaded {len(targets)} tickers (skipped {len(skipped_old)} older than 2 years).")
+    log.info(f"Loaded {len(targets)} tickers (skipped {len(skipped)} older than 2 years).")
     return targets
 
 
@@ -103,7 +97,7 @@ def _to_float(v):
 
 
 # ─────────────────────────────────────────────────────
-# STEP 2: FETCH LIVE PRICE + RSI
+# STEP 2: FETCH PRICE + RSI
 # ─────────────────────────────────────────────────────
 
 def compute_rsi(closes: pd.Series, period: int = 14) -> float:
@@ -119,26 +113,24 @@ def compute_rsi(closes: pd.Series, period: int = 14) -> float:
 
 def fetch_price_and_rsi(ticker: str):
     if ticker in SKIP:
-        return None, None, None
+        return None, None
     sym = TICKER_MAP.get(ticker, ticker)
     try:
         t    = yf.Ticker(sym)
         hist = t.history(period="60d", auto_adjust=True)
         if hist.empty or len(hist) < 15:
             log.warning(f"{ticker}: insufficient history.")
-            return None, None, None
-        price    = float(hist["Close"].iloc[-1])
-        rsi      = compute_rsi(hist["Close"])
-        fi       = t.fast_info
-        currency = str(getattr(fi, "currency", "USD") or "USD")
-        return price, currency, rsi
+            return None, None
+        price = round(float(hist["Close"].iloc[-1]), 2)
+        rsi   = compute_rsi(hist["Close"])
+        return price, rsi
     except Exception as e:
         log.warning(f"{ticker}: fetch error - {e}")
-        return None, None, None
+        return None, None
 
 
 # ─────────────────────────────────────────────────────
-# STEP 3: DAILY DEDUP (once per ticker per calendar day)
+# STEP 3: DAILY DEDUP
 # ─────────────────────────────────────────────────────
 
 def load_log() -> dict:
@@ -165,69 +157,90 @@ def mark_alerted(data: dict, ticker: str):
 
 
 # ─────────────────────────────────────────────────────
-# STEP 4: BUILD HTML + POST TO TEAMS
+# STEP 4: BUILD HTML TABLE
 # ─────────────────────────────────────────────────────
 
-def rsi_color(rsi):
+def fmt_pct(pct: float, crossed: bool) -> str:
+    if pct is None:
+        return "<span style='color:#ccc'>—</span>"
+    color = "#c0392b" if crossed else "#333"
+    weight = "600" if crossed else "400"
+    sign = "+" if pct > 0 else ""
+    return f"<span style='color:{color};font-weight:{weight}'>{sign}{pct:.1f}%</span>"
+
+
+def fmt_rsi(rsi) -> str:
     if rsi is None:
-        return "#888"
+        return "<span style='color:#ccc'>—</span>"
     if rsi >= 70:
-        return "#c0392b"   # red — overbought
+        return f"<span style='color:#c0392b;font-weight:600'>{rsi}</span>"
     if rsi <= 30:
-        return "#27ae60"   # green — oversold
-    return "#333"
+        return f"<span style='color:#27ae60;font-weight:600'>{rsi}</span>"
+    return str(rsi)
+
+
+def fmt_pt(val) -> str:
+    return f"{val:.2f}" if val is not None else "<span style='color:#ccc'>—</span>"
 
 
 def build_html(alerts: list, today: str) -> str:
-    """Build a single HTML table for all alerts, or a no-alert message."""
     if not alerts:
         return (
-            f"<p style='font-family:Arial,sans-serif'>"
-            f"<b style='font-size:16px'>Contour Price Target Alert - {today}</b></p>"
             f"<p style='font-family:Arial,sans-serif;font-size:14px'>"
+            f"<b>Contour Price Target Alert — {today}</b><br><br>"
             f"No tickers within 10% of their upside/downside price target today.</p>"
         )
 
+    th = "padding:7px 10px;text-align:left;font-weight:500;font-size:12px;white-space:nowrap;letter-spacing:0.3px"
+    td = "padding:6px 10px;font-size:13px;white-space:nowrap;border-bottom:1px solid #f0f0f0"
+
     rows = ""
     for a in alerts:
-        direction = "Upside" if a["target_type"] == "upside" else "Downside"
-        rsi       = a.get("rsi")
-        rsi_str   = str(rsi) if rsi is not None else "N/A"
+        row_bg = "#fff5f5" if a["crossed"] else "white"
         rows += (
-            f"<tr>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['ticker']}</b></td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{a['currency']} {a['price']:.2f}</td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{direction}</td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'>{a['currency']} {a['target_price']:.2f}</td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0'><b>{a['pct_away']:.1f}%</b></td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:{rsi_color(rsi)}'><b>{rsi_str}</b></td>"
-            f"<td style='padding:6px 12px;border-bottom:1px solid #e0e0e0;color:#888'>{a['target_date']}</td>"
+            f"<tr style='background:{row_bg}'>"
+            f"<td style='{td}'><b>{a['ticker']}</b></td>"
+            f"<td style='{td}'>{a['price']:.2f}</td>"
+            f"<td style='{td}'>{fmt_pt(a['downside_pt'])}</td>"
+            f"<td style='{td}'>{fmt_pt(a['upside_pt'])}</td>"
+            f"<td style='{td}'>{fmt_pct(a['pct_downside'], a['crossed'] and a['alert_side'] == 'downside')}</td>"
+            f"<td style='{td}'>{fmt_pct(a['pct_upside'],   a['crossed'] and a['alert_side'] == 'upside')}</td>"
+            f"<td style='{td}'>{fmt_rsi(a['rsi'])}</td>"
+            f"<td style='{td};color:#888;font-size:12px'>{a['target_date']}</td>"
+            f"<td style='{td};color:#555'>{a['alert_side'].capitalize()}</td>"
             f"</tr>"
         )
 
     return (
-        f"<p style='font-family:Arial,sans-serif'>"
-        f"<b style='font-size:16px'>Contour Price Target Alert - {today}</b></p>"
-        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;width:100%'>"
+        f"<p style='font-family:Arial,sans-serif;font-size:15px;font-weight:600;margin-bottom:10px'>"
+        f"Contour Price Target Alert — {today}</p>"
+        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;width:100%;table-layout:auto'>"
+        f"<thead>"
         f"<tr style='background:#1a3c6e;color:white'>"
-        f"<th style='padding:8px 12px;text-align:left'>Ticker</th>"
-        f"<th style='padding:8px 12px;text-align:left'>Live Price</th>"
-        f"<th style='padding:8px 12px;text-align:left'>Target</th>"
-        f"<th style='padding:8px 12px;text-align:left'>Target Price</th>"
-        f"<th style='padding:8px 12px;text-align:left'>Distance</th>"
-        f"<th style='padding:8px 12px;text-align:left'>RSI (14)</th>"
-        f"<th style='padding:8px 12px;text-align:left'>Set On</th>"
+        f"<th style='{th}'>Ticker</th>"
+        f"<th style='{th}'>PX</th>"
+        f"<th style='{th}'>Downside PT</th>"
+        f"<th style='{th}'>Upside PT</th>"
+        f"<th style='{th}'>% Downside</th>"
+        f"<th style='{th}'>% Upside</th>"
+        f"<th style='{th}'>RSI</th>"
+        f"<th style='{th}'>PT Date</th>"
+        f"<th style='{th}'>Alert</th>"
         f"</tr>"
-        f"{rows}"
+        f"</thead>"
+        f"<tbody>{rows}</tbody>"
         f"</table>"
-        f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa'>"
-        f"RSI &gt;70 = red | RSI &lt;30 = green | "
+        f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:8px'>"
+        f"Red = crossed target &nbsp;|&nbsp; RSI &gt;70 red, &lt;30 green &nbsp;|&nbsp; "
         f"Source: Contour-Price-Targets.csv</p>"
     )
 
 
+# ─────────────────────────────────────────────────────
+# STEP 5: SEND VIA POWER AUTOMATE
+# ─────────────────────────────────────────────────────
+
 def send_alert(html: str):
-    """Send HTML payload to Power Automate which emails via Send an email (V2)."""
     payload = {"body": html}
     resp = requests.post(
         POWER_AUTOMATE_URL,
@@ -238,7 +251,7 @@ def send_alert(html: str):
     if resp.status_code in (200, 202):
         log.info("Payload sent to Power Automate successfully.")
     else:
-        log.error(f"Power Automate webhook failed: HTTP {resp.status_code} - {resp.text}")
+        log.error(f"Webhook failed: HTTP {resp.status_code} - {resp.text}")
         raise RuntimeError(f"Webhook error: {resp.status_code}")
 
 
@@ -264,43 +277,60 @@ def run():
         if already_alerted(alert_log, ticker):
             continue
 
-        price, currency, rsi = fetch_price_and_rsi(ticker)
+        price, rsi = fetch_price_and_rsi(ticker)
 
         if price is None:
             if ticker not in SKIP:
                 price_errors.append(ticker)
             continue
 
-        triggered = False
+        # Signed % difference
+        # Upside:   positive = above target (crossed), negative = approaching from below
+        # Downside: negative = below target (crossed), positive = approaching from above
+        pct_upside   = round((price - upside)   / upside   * 100, 1) if upside   else None
+        pct_downside = round((price - downside) / downside * 100, 1) if downside else None
+
+        triggered  = False
+        crossed    = False
+        alert_side = None
 
         if upside is not None:
-            pct = abs(price - upside) / upside * 100
-            if pct <= THRESHOLD * 100:
-                log.info(f"  ALERT {ticker}: ${price:.2f}  upside=${upside}  {pct:.1f}% away  RSI={rsi}")
-                alerts_to_send.append({
-                    "ticker": ticker, "price": price, "currency": currency,
-                    "target_type": "upside", "target_price": upside,
-                    "pct_away": pct, "target_date": tgt_date, "rsi": rsi,
-                })
-                triggered = True
+            if price >= upside:
+                triggered = True; crossed = True; alert_side = "upside"
+            elif abs(pct_upside) <= THRESHOLD * 100:
+                triggered = True; alert_side = "upside"
 
         if downside is not None:
-            pct = abs(price - downside) / downside * 100
-            if pct <= THRESHOLD * 100:
-                log.info(f"  ALERT {ticker}: ${price:.2f}  downside=${downside}  {pct:.1f}% away  RSI={rsi}")
-                alerts_to_send.append({
-                    "ticker": ticker, "price": price, "currency": currency,
-                    "target_type": "downside", "target_price": downside,
-                    "pct_away": pct, "target_date": tgt_date, "rsi": rsi,
-                })
-                triggered = True
+            if price <= downside:
+                triggered = True; crossed = True; alert_side = "downside"
+            elif abs(pct_downside) <= THRESHOLD * 100:
+                triggered = True; alert_side = alert_side or "downside"
 
         if triggered:
+            log.info(f"  ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}  crossed={crossed}")
+            alerts_to_send.append({
+                "ticker":      ticker,
+                "price":       price,
+                "upside_pt":   upside,
+                "downside_pt": downside,
+                "pct_upside":  pct_upside,
+                "pct_downside": pct_downside,
+                "rsi":         rsi,
+                "target_date": tgt_date,
+                "alert_side":  alert_side,
+                "crossed":     crossed,
+            })
             mark_alerted(alert_log, ticker)
 
     save_log(alert_log)
 
-    alerts_to_send = sorted(alerts_to_send, key=lambda x: x["pct_away"])
+    # Crossed first, then by closest absolute %
+    def sort_key(a):
+        pct = a["pct_upside"] if a["alert_side"] == "upside" else a["pct_downside"]
+        return (0 if a["crossed"] else 1, abs(pct) if pct is not None else 999)
+
+    alerts_to_send.sort(key=sort_key)
+
     today = date.today().strftime("%B %d, %Y")
     html  = build_html(alerts_to_send, today)
     send_alert(html)
