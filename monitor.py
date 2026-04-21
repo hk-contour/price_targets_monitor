@@ -149,7 +149,8 @@ def get_split_adjustment(ticker: str, target_date_str: str) -> float:
         return 1.0
 
 
-def fetch_price_and_rsi(ticker: str):
+def fetch_data(ticker: str):
+    """Returns (price, rsi) or (None, None)."""
     if ticker in SKIP:
         return None, None
     sym = TICKER_MAP.get(ticker, ticker)
@@ -171,6 +172,9 @@ def fetch_price_and_rsi(ticker: str):
 # STEP 3: DAILY DEDUP
 # ─────────────────────────────────────────────────────
 
+ALERT_LOG = "alerts_sent.json"
+
+
 def load_log() -> dict:
     if os.path.exists(ALERT_LOG):
         with open(ALERT_LOG) as f:
@@ -179,19 +183,22 @@ def load_log() -> dict:
 
 
 def save_log(data: dict):
-    cutoff = date.today().toordinal() - 14
+    # Keep only last 7 days
+    cutoff = date.today().toordinal() - 7
     data   = {k: v for k, v in data.items()
               if date.fromisoformat(k).toordinal() >= cutoff}
     with open(ALERT_LOG, "w") as f:
         json.dump(data, f, indent=2)
 
 
-def already_alerted(data: dict, ticker: str) -> bool:
-    return data.get(date.today().isoformat(), {}).get(ticker, False)
+def was_in_zone_yesterday(log_data: dict, ticker: str) -> bool:
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    return log_data.get(yesterday, {}).get(ticker, False)
 
 
-def mark_alerted(data: dict, ticker: str):
-    data.setdefault(date.today().isoformat(), {})[ticker] = True
+def mark_in_zone_today(log_data: dict, ticker: str):
+    today = date.today().isoformat()
+    log_data.setdefault(today, {})[ticker] = True
 
 
 # ─────────────────────────────────────────────────────
@@ -325,10 +332,7 @@ def run():
         downside = info["downside"]
         tgt_date = info["date"]
 
-        if already_alerted(alert_log, ticker):
-            continue
-
-        price, rsi = fetch_price_and_rsi(ticker)
+        price, rsi = fetch_data(ticker)
 
         if price is None:
             if ticker not in SKIP:
@@ -375,7 +379,13 @@ def run():
                 triggered = True; alert_side = alert_side or "downside"
 
         if triggered:
-            log.info(f"  ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}  crossed={crossed}")
+            # Only alert if NEW trigger — not in zone at yesterday's run
+            if was_in_zone_yesterday(alert_log, ticker):
+                log.debug(f"  {ticker}: in zone at yesterday's run, skipping.")
+                mark_in_zone_today(alert_log, ticker)  # keep tracking
+                continue
+
+            log.info(f"  NEW ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}  crossed={crossed}")
             alerts_to_send.append({
                 "ticker":      ticker,
                 "price":       price,
@@ -388,9 +398,7 @@ def run():
                 "alert_side":  alert_side,
                 "crossed":     crossed,
             })
-            mark_alerted(alert_log, ticker)
-
-    save_log(alert_log)
+            mark_in_zone_today(alert_log, ticker)
 
     # Sort: crossed first by highest absolute % breach (most extreme first),
     # then approaching by closest to target
@@ -403,6 +411,8 @@ def run():
             return (1, abs(pct))    # closest to target first
 
     alerts_to_send.sort(key=sort_key)
+
+    save_log(alert_log)
 
     today = date.today().strftime("%B %d, %Y")
     html  = build_html(alerts_to_send, today)
