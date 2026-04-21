@@ -2,12 +2,15 @@ name: Price Target Monitor
 
 on:
   schedule:
-    - cron: '0 14 * * 1-5'   # 10:00 AM ET (14:00 UTC) weekdays only
-  workflow_dispatch:           # also run manually from GitHub UI
+    - cron: '0 14 * * 1-5'   # 10:00 AM ET (14:00 UTC) weekdays
+  workflow_dispatch:
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,3 +23,12 @@ jobs:
 
       - name: Run price check
         run: python monitor.py
+
+      - name: Save alert log
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add alerts_sent.json || true
+          git diff --staged --quiet || git commit -m "chore: update alerts_sent.json [skip ci]"
+          git push
