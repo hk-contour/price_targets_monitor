@@ -210,14 +210,14 @@ def build_html(alerts: list, today: str) -> str:
         rows += (
             f"<tr>"
             f"<td style='{td}'><b>{a['ticker']}</b></td>"
+            f"<td style='{td};color:#555'>{a['alert_side'].capitalize()}</td>"
             f"<td style='{td}'>{a['price']:.2f}</td>"
             f"<td style='{td}'>{fmt_pt(a['downside_pt'])}</td>"
-            f"<td style='{td}'>{fmt_pt(a['upside_pt'])}</td>"
             f"<td style='{td}'>{fmt_pct(a['pct_downside'], a['crossed'] and a['alert_side'] == 'downside')}</td>"
+            f"<td style='{td}'>{fmt_pt(a['upside_pt'])}</td>"
             f"<td style='{td}'>{fmt_pct(a['pct_upside'],   a['crossed'] and a['alert_side'] == 'upside')}</td>"
             f"<td style='{td}'>{fmt_rsi(a['rsi'])}</td>"
             f"<td style='{td};color:#888;font-size:12px'>{a['target_date']}</td>"
-            f"<td style='{td};color:#555'>{a['alert_side'].capitalize()}</td>"
             f"</tr>"
         )
 
@@ -228,14 +228,14 @@ def build_html(alerts: list, today: str) -> str:
         f"<thead>"
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='{th}'>Ticker</th>"
+        f"<th style='{th}'>Alert</th>"
         f"<th style='{th}'>Price</th>"
         f"<th style='{th}'>Downside PT</th>"
-        f"<th style='{th}'>Upside PT</th>"
         f"<th style='{th}'>% Downside</th>"
+        f"<th style='{th}'>Upside PT</th>"
         f"<th style='{th}'>% Upside</th>"
         f"<th style='{th}'>RSI</th>"
         f"<th style='{th}'>PT Date</th>"
-        f"<th style='{th}'>Alert</th>"
         f"</tr>"
         f"</thead>"
         f"<tbody>{rows}</tbody>"
@@ -334,16 +334,15 @@ def run():
 
     save_log(alert_log)
 
-    # Sort: most extreme crossed first (most negative pct), then approaching by closest %
+    # Sort: crossed first by highest absolute % breach (most extreme first),
+    # then approaching by closest to target
     def sort_key(a):
         pct = a["pct_upside"] if a["alert_side"] == "upside" else a["pct_downside"]
         pct = pct if pct is not None else 0
         if a["crossed"]:
-            # Most negative (furthest past target) first — use pct as-is (negatives sort first)
-            return (0, pct)
+            return (0, -abs(pct))   # highest absolute breach first
         else:
-            # Approaching: closest to target first
-            return (1, abs(pct))
+            return (1, abs(pct))    # closest to target first
 
     alerts_to_send.sort(key=sort_key)
 
