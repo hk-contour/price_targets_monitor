@@ -251,13 +251,14 @@ def build_html(alerts: list, today: str) -> str:
 
     rows = ""
     for a in alerts:
-        px    = a["price"]
-        up_pt = a["upside_pt"]
-        dn_pt = a["downside_pt"]
-        up_dist = abs(px - up_pt) if up_pt else float("inf")
-        dn_dist = abs(px - dn_pt) if dn_pt else float("inf")
-        bold_up = up_dist <= dn_dist
-        bold_dn = dn_dist <  up_dist
+        px         = a["price"]
+        up_pt      = a["upside_pt"]
+        dn_pt      = a["downside_pt"]
+        alert_side = a["alert_side"]
+        up_dist    = abs(px - up_pt) if up_pt else float("inf")
+        dn_dist    = abs(px - dn_pt) if dn_pt else float("inf")
+        bold_up    = up_dist <= dn_dist
+        bold_dn    = dn_dist <  up_dist
 
         def _pt(val, bold):
             if val is None:
@@ -265,17 +266,21 @@ def build_html(alerts: list, today: str) -> str:
             s = f"{val:.2f}"
             return f"<b>{s}</b>" if bold else s
 
+        # Only show the relevant % column; show "--" for the other
+        pct_dn_str = fmt_pct(a['pct_downside'], a['crossed'] and alert_side == 'downside')                      if alert_side == 'downside' else "<span style='color:#bbb'>--</span>"
+        pct_up_str = fmt_pct(a['pct_upside'], a['crossed'] and alert_side == 'upside')                      if alert_side == 'upside' else "<span style='color:#bbb'>--</span>"
+
         rows += (
             f"<tr>"
             f"<td style='{td}'><b>{a['ticker']}</b></td>"
-            f"<td style='{td};color:#555'>{a['alert_side'].capitalize()}</td>"
-            f"<td style='{td}'><b>{a['price']:.2f}</b></td>"
-            f"<td style='{td}'>{_pt(dn_pt, bold_dn)}</td>"
-            f"<td style='{td}'>{fmt_pct(a['pct_downside'], a['crossed'] and a['alert_side'] == 'downside')}</td>"
-            f"<td style='{td}'>{_pt(up_pt, bold_up)}</td>"
-            f"<td style='{td}'>{fmt_pct(a['pct_upside'],   a['crossed'] and a['alert_side'] == 'upside')}</td>"
-            f"<td style='{td}'>{fmt_rsi(a['rsi'])}</td>"
-            f"<td style='{td};color:#888;font-size:12px'>{a['target_date']}</td>"
+            f"<td style='{td};color:#555'>{alert_side.capitalize()}</td>"
+            f"<td style='{td};text-align:right'><b>{a['price']:.2f}</b></td>"
+            f"<td style='{td};text-align:right'>{_pt(dn_pt, bold_dn)}</td>"
+            f"<td style='{td};text-align:right'>{pct_dn_str}</td>"
+            f"<td style='{td};text-align:right'>{_pt(up_pt, bold_up)}</td>"
+            f"<td style='{td};text-align:right'>{pct_up_str}</td>"
+            f"<td style='{td};text-align:right'>{fmt_rsi(a['rsi'])}</td>"
+            f"<td style='{td};color:#888;font-size:12px;text-align:center'>{a['target_date']}</td>"
             f"</tr>"
         )
 
@@ -287,13 +292,13 @@ def build_html(alerts: list, today: str) -> str:
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='{th}'>Ticker</th>"
         f"<th style='{th}'>Alert</th>"
-        f"<th style='{th}'>Price</th>"
-        f"<th style='{th}'>Downside PT</th>"
-        f"<th style='{th}'>% Downside</th>"
-        f"<th style='{th}'>Upside PT</th>"
-        f"<th style='{th}'>% Upside</th>"
-        f"<th style='{th}'>RSI</th>"
-        f"<th style='{th}'>PT Date</th>"
+        f"<th style='{th};text-align:right'>Price</th>"
+        f"<th style='{th};text-align:right'>Downside PT</th>"
+        f"<th style='{th};text-align:right'>% Downside</th>"
+        f"<th style='{th};text-align:right'>Upside PT</th>"
+        f"<th style='{th};text-align:right'>% Upside</th>"
+        f"<th style='{th};text-align:right'>RSI</th>"
+        f"<th style='{th};text-align:center'>PT Date</th>"
         f"</tr>"
         f"</thead>"
         f"<tbody>{rows}</tbody>"
