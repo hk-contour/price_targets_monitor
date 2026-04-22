@@ -150,48 +150,58 @@ def get_split_adjustment(ticker: str, target_date_str: str) -> float:
 
 
 def fetch_data(ticker: str):
-    """Returns (price, rsi) or (None, None)."""
+    """Returns (price, rsi, hist) or (None, None, None)."""
     if ticker in SKIP:
-        return None, None
+        return None, None, None
     sym = TICKER_MAP.get(ticker, ticker)
     try:
         t    = yf.Ticker(sym)
         hist = t.history(period="60d", auto_adjust=True)
         if hist.empty or len(hist) < 15:
             log.warning(f"{ticker}: insufficient history.")
-            return None, None
+            return None, None, None
         price = round(float(hist["Close"].iloc[-1]), 2)
         rsi   = compute_rsi(hist["Close"])
-        return price, rsi
+        return price, rsi, hist
     except Exception as e:
         log.warning(f"{ticker}: fetch error - {e}")
-        return None, None
+        return None, None, None
 
 
-def was_in_zone_past_month(ticker: str, upside, downside, threshold) -> bool:
+def crossed_into_zone_this_month(hist, upside, downside, threshold) -> bool:
     """
-    Fetches 1-month price history and checks if the stock's high/low
-    touched the alert zone at any point during that period.
-    Uses yfinance period="1mo" for the monthly high/low.
+    Returns True if the stock crossed INTO the alert zone within the past month.
+    Logic: price ~1 month ago was OUTSIDE the zone, but has since entered it.
+    Uses the 60-day history already fetched — no extra API call needed.
+
+    "In zone" for upside  = price >= upside  * (1 - threshold)
+    "In zone" for downside = price <= downside * (1 + threshold)
     """
-    sym = TICKER_MAP.get(ticker, ticker)
+    if len(hist) < 22:
+        return True  # not enough history, default to showing
+
     try:
-        t    = yf.Ticker(sym)
-        hist = t.history(period="1mo", auto_adjust=True)
-        if hist.empty:
-            return True  # if we can't check, default to showing it
-        monthly_high = hist["High"].max()
-        monthly_low  = hist["Low"].min()
+        # Price from ~1 month ago (22 trading days back)
+        month_ago_close = float(hist["Close"].iloc[-22])
+
         if upside is not None:
-            if monthly_high >= upside * (1 - threshold):
+            zone_floor = upside * (1 - threshold)
+            was_outside = month_ago_close < zone_floor
+            is_inside   = float(hist["Close"].iloc[-1]) >= zone_floor
+            if was_outside and is_inside:
                 return True
+
         if downside is not None:
-            if monthly_low <= downside * (1 + threshold):
+            zone_ceil   = downside * (1 + threshold)
+            was_outside = month_ago_close > zone_ceil
+            is_inside   = float(hist["Close"].iloc[-1]) <= zone_ceil
+            if was_outside and is_inside:
                 return True
+
         return False
     except Exception as e:
-        log.warning(f"{ticker}: monthly zone check failed - {e}")
-        return True  # default to showing if check fails
+        log.warning(f"Zone cross check failed: {e}")
+        return True
 
 
 # ─────────────────────────────────────────────────────
@@ -331,9 +341,9 @@ def run():
         downside = info["downside"]
         tgt_date = info["date"]
 
-        price, rsi = fetch_data(ticker)
+        price, rsi, hist = fetch_data(ticker)
 
-        if price is None:
+        if price is None or hist is None:
             if ticker not in SKIP:
                 price_errors.append(ticker)
             continue
@@ -378,9 +388,9 @@ def run():
                 triggered = True; alert_side = alert_side or "downside"
 
         if triggered:
-            # Only include if stock touched zone at some point in the past month
-            if not was_in_zone_past_month(ticker, upside, downside, THRESHOLD):
-                log.debug(f"  {ticker}: in zone today but not in past month, skipping.")
+            # Only include if price crossed INTO the zone within the past month
+            if not crossed_into_zone_this_month(hist, upside, downside, THRESHOLD):
+                log.debug(f"  {ticker}: in zone today but crossed in over a month ago, skipping.")
                 continue
 
             log.info(f"  ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}")
