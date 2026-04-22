@@ -246,8 +246,8 @@ def build_html(alerts: list, today: str) -> str:
             f"No tickers within 10% of their upside/downside price target today.</p>"
         )
 
-    th = "padding:7px 10px;text-align:left;font-weight:500;font-size:12px;white-space:nowrap;letter-spacing:0.3px"
-    td = "padding:6px 10px;font-size:13px;white-space:nowrap;border-bottom:1px solid #f0f0f0"
+    th = "padding:6px 10px;text-align:left;font-weight:500;font-size:12px;white-space:nowrap"
+    td = "padding:5px 10px;font-size:13px;white-space:nowrap;border-bottom:1px solid #f0f0f0"
 
     rows = ""
     for a in alerts:
@@ -287,7 +287,7 @@ def build_html(alerts: list, today: str) -> str:
     return (
         f"<p style='font-family:Arial,sans-serif;font-size:15px;font-weight:600;margin-bottom:10px'>"
         f"Contour Price Target Alert — {today}</p>"
-        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;width:100%;table-layout:auto'>"
+        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto'>"
         f"<thead>"
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='{th}'>Ticker</th>"
