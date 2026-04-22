@@ -28,7 +28,7 @@ POWER_AUTOMATE_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environme
 CSV_PATH       = "Contour-Price-Targets.csv"
 ALERT_LOG      = "alerts_sent.json"
 THRESHOLD      = 0.10
-MAX_TARGET_AGE = 548      # 18 months
+MAX_TARGET_AGE = 365      # 12 months
 
 TICKER_MAP = {
     # Germany (Xetra)
@@ -168,37 +168,37 @@ def fetch_data(ticker: str):
         return None, None
 
 
+def was_in_zone_past_month(ticker: str, upside, downside, threshold) -> bool:
+    """
+    Fetches 1-month price history and checks if the stock's high/low
+    touched the alert zone at any point during that period.
+    Uses yfinance period="1mo" for the monthly high/low.
+    """
+    sym = TICKER_MAP.get(ticker, ticker)
+    try:
+        t    = yf.Ticker(sym)
+        hist = t.history(period="1mo", auto_adjust=True)
+        if hist.empty:
+            return True  # if we can't check, default to showing it
+        monthly_high = hist["High"].max()
+        monthly_low  = hist["Low"].min()
+        if upside is not None:
+            if monthly_high >= upside * (1 - threshold):
+                return True
+        if downside is not None:
+            if monthly_low <= downside * (1 + threshold):
+                return True
+        return False
+    except Exception as e:
+        log.warning(f"{ticker}: monthly zone check failed - {e}")
+        return True  # default to showing if check fails
+
+
 # ─────────────────────────────────────────────────────
 # STEP 3: DAILY DEDUP
 # ─────────────────────────────────────────────────────
 
-ALERT_LOG = "alerts_sent.json"
-
-
-def load_log() -> dict:
-    if os.path.exists(ALERT_LOG):
-        with open(ALERT_LOG) as f:
-            return json.load(f)
-    return {}
-
-
-def save_log(data: dict):
-    # Keep only last 7 days
-    cutoff = date.today().toordinal() - 7
-    data   = {k: v for k, v in data.items()
-              if date.fromisoformat(k).toordinal() >= cutoff}
-    with open(ALERT_LOG, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-def was_in_zone_yesterday(log_data: dict, ticker: str) -> bool:
-    yesterday = (date.today() - timedelta(days=1)).isoformat()
-    return log_data.get(yesterday, {}).get(ticker, False)
-
-
-def mark_in_zone_today(log_data: dict, ticker: str):
-    today = date.today().isoformat()
-    log_data.setdefault(today, {})[ticker] = True
+LOOKBACK_DAYS = 30   # Alert if ticker entered zone at any point in past 30 days
 
 
 # ─────────────────────────────────────────────────────
@@ -321,8 +321,7 @@ def run():
     log.info("=" * 55)
     log.info(f"Check starting - {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
 
-    targets   = load_targets(CSV_PATH)
-    alert_log = load_log()
+    targets = load_targets(CSV_PATH)
 
     alerts_to_send = []
     price_errors   = []
@@ -379,26 +378,24 @@ def run():
                 triggered = True; alert_side = alert_side or "downside"
 
         if triggered:
-            # Only alert if NEW trigger — not in zone at yesterday's run
-            if was_in_zone_yesterday(alert_log, ticker):
-                log.debug(f"  {ticker}: in zone at yesterday's run, skipping.")
-                mark_in_zone_today(alert_log, ticker)  # keep tracking
+            # Only include if stock touched zone at some point in the past month
+            if not was_in_zone_past_month(ticker, upside, downside, THRESHOLD):
+                log.debug(f"  {ticker}: in zone today but not in past month, skipping.")
                 continue
 
-            log.info(f"  NEW ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}  crossed={crossed}")
+            log.info(f"  ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}")
             alerts_to_send.append({
-                "ticker":      ticker,
-                "price":       price,
-                "upside_pt":   upside,
-                "downside_pt": downside,
-                "pct_upside":  pct_upside,
+                "ticker":       ticker,
+                "price":        price,
+                "upside_pt":    upside,
+                "downside_pt":  downside,
+                "pct_upside":   pct_upside,
                 "pct_downside": pct_downside,
-                "rsi":         rsi,
-                "target_date": tgt_date,
-                "alert_side":  alert_side,
-                "crossed":     crossed,
+                "rsi":          rsi,
+                "target_date":  tgt_date,
+                "alert_side":   alert_side,
+                "crossed":      crossed,
             })
-            mark_in_zone_today(alert_log, ticker)
 
     # Sort: crossed first by highest absolute % breach (most extreme first),
     # then approaching by closest to target
@@ -411,8 +408,6 @@ def run():
             return (1, abs(pct))    # closest to target first
 
     alerts_to_send.sort(key=sort_key)
-
-    save_log(alert_log)
 
     today = date.today().strftime("%B %d, %Y")
     html  = build_html(alerts_to_send, today)
