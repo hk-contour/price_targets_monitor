@@ -119,7 +119,7 @@ def compute_rsi(closes: pd.Series, period: int = 14) -> float:
     avg_loss = loss.ewm(com=period - 1, min_periods=period).mean()
     rs       = avg_gain / avg_loss.replace(0, float("inf"))
     rsi      = 100 - (100 / (1 + rs))
-    return round(float(rsi.iloc[-1]), 1)
+    return int(round(float(rsi.iloc[-1])))
 
 
 def get_split_adjustment(ticker: str, target_date_str: str) -> float:
@@ -248,6 +248,8 @@ def build_html(alerts: list, today: str) -> str:
 
     th = "padding:6px 10px;text-align:left;font-weight:500;font-size:12px;white-space:nowrap"
     td = "padding:5px 10px;font-size:13px;white-space:nowrap;border-bottom:1px solid #f0f0f0"
+    # Column min-widths to prevent Outlook from compressing columns
+    col_widths = [55, 65, 60, 80, 75, 75, 70, 40, 75]  # Ticker,Alert,Price,DnPT,%Dn,UpPT,%Up,RSI,Date
 
     rows = ""
     for a in alerts:
@@ -284,10 +286,12 @@ def build_html(alerts: list, today: str) -> str:
             f"</tr>"
         )
 
+    colgroup = "".join(f"<col style='min-width:{w}px;width:{w}px'>" for w in col_widths)
     return (
         f"<p style='font-family:Arial,sans-serif;font-size:15px;font-weight:600;margin-bottom:10px'>"
         f"Contour Price Target Alert — {today}</p>"
-        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto'>"
+        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;table-layout:fixed'>"
+        f"<colgroup>{colgroup}</colgroup>"
         f"<thead>"
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='{th}'>Ticker</th>"
