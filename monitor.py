@@ -220,33 +220,34 @@ def get_split_adjustment(ticker: str, target_date_str: str) -> float:
 
 def reason_for_flag(alert: dict) -> str:
     """Auto-generate the 'Reason for flag' text."""
-    p = alert.get("portfolio")  # 'Long' / 'Short' / None
-    side       = alert["alert_side"]
-    crossed    = alert["crossed"]
-    pct        = alert["pct_upside"] if side == "upside" else alert["pct_downside"]
-    pct_abs    = abs(pct) if pct is not None else 0
+    p           = alert.get("portfolio")  # 'Long' / 'Short' / None
+    side        = alert["alert_side"]
+    crossed     = alert["crossed"]
+    pct         = alert["pct_upside"] if side == "upside" else alert["pct_downside"]
+    pct_abs     = abs(pct) if pct is not None else 0
     pt_age_days = alert.get("pt_age_days", 0)
 
     # Stale targets — either >30% away, OR >20% away AND PT older than 6 months
     if pct_abs > 30 or (pct_abs > 20 and pt_age_days > 180):
-        return "*Targets may need update"
+        return "Targets may need update"
 
     # Portfolio names
-    if p == "Short":
-        if side == "upside" and crossed:
-            return "Short is above upside"
-        if side == "upside" and pct_abs <= 7:
-            return "Short is near upside"
+    if p == "Short" and side == "upside":
+        if crossed:
+            return "Short above upside"
+        if pct_abs <= 7:
+            return "Short near upside"
 
     if p == "Long":
         if side == "upside" and crossed:
-            return "Long above upside"
-        if side == "downside" and pct_abs <= 7:
-            return "Long near downside"
-        if side == "downside" and crossed:
-            return "Long below downside"
+            return "Above upside"
+        if side == "downside":
+            if crossed:
+                return "Long below downside"
+            if pct_abs <= 7:
+                return "Long near downside"
 
-    # Non-portfolio
+    # Non-portfolio crossed
     if not p:
         if side == "upside" and crossed:
             return "Above upside"
@@ -323,8 +324,8 @@ def render_row(a, td):
 
 def render_section_header(title, td):
     return (
-        f"<tr><td colspan='11' style='padding:14px 6px 6px 0;"
-        f"font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#1a3c6e'>"
+        f"<tr><td colspan='11' style='padding:18px 6px 8px 0;"
+        f"font-family:Arial,sans-serif;font-size:18px;font-weight:700;color:#1a3c6e'>"
         f"{title}</td></tr>"
     )
 
@@ -383,7 +384,7 @@ def build_html(portfolio_alerts: list, non_portfolio_alerts: list, today: str) -
         body_rows += render_section_header("Non-portfolio Alerts", td)
 
         # Sub-groups
-        stale       = [a for a in non_portfolio_alerts if a.get("reason") == "*Targets may need update"]
+        stale       = [a for a in non_portfolio_alerts if a.get("reason") == "Targets may need update"]
         upside_x    = [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "upside"  and a["crossed"]]
         upside_app  = [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "upside"  and not a["crossed"]]
         downside_x  = [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "downside" and a["crossed"]]
@@ -434,7 +435,7 @@ def build_html(portfolio_alerts: list, non_portfolio_alerts: list, today: str) -
         f"</table>"
         f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:8px'>"
         f"Red = crossed target | RSI &gt;70 red, &lt;30 green | "
-        f"Source: Contour-Price-Targets.csv + Contour_Portfolio_Delta_Adjusted.xlsx</p>"
+        f"Source: Contour-Price-Targets.csv + Contour-Portfolio-Delta-Adjusted.xlsx</p>"
     )
 
 
