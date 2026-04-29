@@ -29,7 +29,6 @@ CSV_PATH       = "Contour-Price-Targets.csv"
 PORTFOLIO_PATH = "Contour-Portfolio-Delta-Adjusted.xlsx"
 THRESHOLD      = 0.10
 MAX_TARGET_AGE = 365      # 12 months
-STALE_PCT      = 30       # if abs(% away) > this, mark "Targets may need update"
 
 TICKER_MAP = {
     "IFXGn": "IFX.DE",   "SAPG": "SAP.DE",
@@ -222,13 +221,14 @@ def get_split_adjustment(ticker: str, target_date_str: str) -> float:
 def reason_for_flag(alert: dict) -> str:
     """Auto-generate the 'Reason for flag' text."""
     p = alert.get("portfolio")  # 'Long' / 'Short' / None
-    side    = alert["alert_side"]
-    crossed = alert["crossed"]
-    pct     = alert["pct_upside"] if side == "upside" else alert["pct_downside"]
-    pct_abs = abs(pct) if pct is not None else 0
+    side       = alert["alert_side"]
+    crossed    = alert["crossed"]
+    pct        = alert["pct_upside"] if side == "upside" else alert["pct_downside"]
+    pct_abs    = abs(pct) if pct is not None else 0
+    pt_age_days = alert.get("pt_age_days", 0)
 
-    # Stale targets — extreme % away
-    if pct_abs > STALE_PCT:
+    # Stale targets — either >30% away, OR >20% away AND PT older than 6 months
+    if pct_abs > 30 or (pct_abs > 20 and pt_age_days > 180):
         return "*Targets may need update"
 
     # Portfolio names
@@ -341,6 +341,15 @@ def build_html(portfolio_alerts: list, non_portfolio_alerts: list, today: str) -
             f"No tickers within 10% of their upside/downside price target today.</p>"
         )
 
+    # Banner if no portfolio alerts
+    no_port_banner = ""
+    if not portfolio_alerts:
+        no_port_banner = (
+            f"<p style='font-family:Arial,sans-serif;font-size:13px;color:#777;"
+            f"background:#f5f5f5;padding:8px 12px;border-left:3px solid #1a3c6e;margin:8px 0'>"
+            f"<i>No portfolio names hit the alert threshold today.</i></p>"
+        )
+
     th = "padding:6px 10px;text-align:left;font-weight:500;font-size:12px;white-space:nowrap"
     td = "padding:5px 10px;font-size:13px;white-space:nowrap;border-bottom:1px solid #f0f0f0"
     col_widths = [55, 65, 60, 60, 80, 75, 75, 70, 40, 75, 180]
@@ -403,6 +412,7 @@ def build_html(portfolio_alerts: list, non_portfolio_alerts: list, today: str) -
     return (
         f"<p style='font-family:Arial,sans-serif;font-size:15px;font-weight:600;margin-bottom:10px'>"
         f"Contour Price Target Alert — {today}</p>"
+        f"{no_port_banner}"
         f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;table-layout:fixed'>"
         f"<colgroup>{colgroup}</colgroup>"
         f"<thead>"
@@ -509,12 +519,19 @@ def run():
                 triggered = True; alert_side = alert_side or "downside"
 
         if triggered:
-            # Only include if crossed INTO zone in past month
-            if not crossed_into_zone_this_month(hist, upside, downside, THRESHOLD):
-                log.debug(f"  {ticker}: in zone but crossed in over a month ago, skipping.")
-                continue
-
             port = portfolio.get(ticker)  # 'Long', 'Short', or None
+
+            # Apply "crossed into zone in past month" filter ONLY to non-portfolio names.
+            # Portfolio names always show — too important to miss.
+            if not port:
+                if not crossed_into_zone_this_month(hist, upside, downside, THRESHOLD):
+                    log.debug(f"  {ticker}: in zone but crossed in over a month ago, skipping (non-portfolio).")
+                    continue
+
+            # Calculate PT age in days
+            tgt_date_obj = datetime.strptime(tgt_date, "%m/%d/%Y").date()
+            pt_age_days  = (date.today() - tgt_date_obj).days
+
             alert = {
                 "ticker":       ticker,
                 "price":        price,
@@ -527,6 +544,7 @@ def run():
                 "alert_side":   alert_side,
                 "crossed":      crossed,
                 "portfolio":    port,
+                "pt_age_days":  pt_age_days,
             }
             alert["reason"] = reason_for_flag(alert)
 
