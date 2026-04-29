@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
 Contour Price Target Monitor
-- Reads Contour-Price-Targets.csv (targets set within past 2 years)
+- Reads Contour-Price-Targets.csv (targets set within past 12 months)
+- Reads Contour-Portfolio-Delta-Adjusted.xlsx (current Longs/Shorts)
 - Alerts if price is within 10% of OR has crossed upside/downside target
-- 14-day RSI per ticker
-- Signed % difference (not absolute value)
-- One alert per ticker per calendar day
-- Sends single HTML payload to Power Automate webhook at 10am ET weekdays
+- 14-day RSI per ticker (integer)
+- Only includes names that crossed INTO the zone within the past month
+- Output is split into Portfolio Alerts (Shorts then Longs) and Non-portfolio Alerts
+- Sends single HTML email via Power Automate webhook at 10am ET weekdays
 """
 
 import os
-import json
 import logging
 import sys
 from datetime import date, datetime, timedelta
@@ -26,27 +26,21 @@ import requests
 POWER_AUTOMATE_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
 CSV_PATH       = "Contour-Price-Targets.csv"
-ALERT_LOG      = "alerts_sent.json"
+PORTFOLIO_PATH = "Contour-Portfolio-Delta-Adjusted.xlsx"
 THRESHOLD      = 0.10
 MAX_TARGET_AGE = 365      # 12 months
+STALE_PCT      = 30       # if abs(% away) > this, mark "Targets may need update"
 
 TICKER_MAP = {
-    # Germany (Xetra)
     "IFXGn": "IFX.DE",   "SAPG": "SAP.DE",
-    # Frankfurt
     "AG1G":  "AG1.F",
-    # France (Euronext Paris)
     "PUBP":  "PUB.PA",
-    # UK
     "WISEa": "WISE.L",
-    # Canada
     "RCIb":  "RCI-B.TO",
-    # Japan (Tokyo Stock Exchange)
     "8136":  "8136.T",  "6098": "6098.T",   "7974": "7974.T",
     "7751":  "7751.T",  "4324": "4324.T",   "6981": "6981.T",
     "6963":  "6963.T",  "6857": "6857.T",   "4661": "4661.T",
     "6594":  "6594.T",
-    # Taiwan (Taiwan Stock Exchange)
     "2330":  "2330.TW",
 }
 
@@ -65,7 +59,7 @@ log = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────
-# STEP 1: LOAD TARGETS (2-year filter)
+# STEP 1: LOAD TARGETS (12 month filter)
 # ─────────────────────────────────────────────────────
 
 def load_targets(path: str) -> dict:
@@ -95,7 +89,7 @@ def load_targets(path: str) -> dict:
             "date":     tgt_date.strftime("%m/%d/%Y"),
         }
 
-    log.info(f"Loaded {len(targets)} tickers (skipped {len(skipped)} older than 2 years).")
+    log.info(f"Loaded {len(targets)} tickers (skipped {len(skipped)} older than 12 months).")
     return targets
 
 
@@ -108,10 +102,49 @@ def _to_float(v):
 
 
 # ─────────────────────────────────────────────────────
-# STEP 2: FETCH PRICE + RSI
+# STEP 2: LOAD PORTFOLIO HOLDINGS
 # ─────────────────────────────────────────────────────
 
-def compute_rsi(closes: pd.Series, period: int = 14) -> float:
+def load_portfolio(path: str) -> dict:
+    """
+    Returns { ticker: 'Long' | 'Short' } from the Lightkeeper-format Excel.
+    Longs are in column 1 (issuer) and 2 (weight).
+    Shorts are in column 5 (issuer) and 6 (weight).
+    """
+    if not os.path.exists(path):
+        log.warning(f"Portfolio file not found: {path}. Continuing without portfolio data.")
+        return {}
+
+    try:
+        df = pd.read_excel(path, header=None)
+        portfolio = {}
+
+        # Longs: col 1 is Issuer, starting from row index 10 (skip header rows)
+        for _, row in df.iloc[10:].iterrows():
+            t = row[1]
+            if pd.notna(t) and str(t).strip() and str(t).strip().lower() != "issuer":
+                portfolio[str(t).strip().upper()] = "Long"
+
+        # Shorts: col 5 is Issuer
+        for _, row in df.iloc[10:].iterrows():
+            t = row[5]
+            if pd.notna(t) and str(t).strip() and str(t).strip().lower() != "issuer":
+                portfolio[str(t).strip().upper()] = "Short"
+
+        longs  = sum(1 for v in portfolio.values() if v == "Long")
+        shorts = sum(1 for v in portfolio.values() if v == "Short")
+        log.info(f"Loaded portfolio: {longs} longs, {shorts} shorts.")
+        return portfolio
+    except Exception as e:
+        log.warning(f"Failed to load portfolio: {e}")
+        return {}
+
+
+# ─────────────────────────────────────────────────────
+# STEP 3: FETCH PRICE + RSI
+# ─────────────────────────────────────────────────────
+
+def compute_rsi(closes: pd.Series, period: int = 14) -> int:
     delta    = closes.diff()
     gain     = delta.clip(lower=0)
     loss     = -delta.clip(upper=0)
@@ -120,33 +153,6 @@ def compute_rsi(closes: pd.Series, period: int = 14) -> float:
     rs       = avg_gain / avg_loss.replace(0, float("inf"))
     rsi      = 100 - (100 / (1 + rs))
     return int(round(float(rsi.iloc[-1])))
-
-
-def get_split_adjustment(ticker: str, target_date_str: str) -> float:
-    """
-    Returns cumulative split factor for splits that occurred after target_date.
-    e.g. a 10:1 split returns 10.0, meaning targets should be divided by 10.
-    Only called when % away is suspiciously large (>20%).
-    """
-    sym = TICKER_MAP.get(ticker, ticker)
-    try:
-        from datetime import date as date_
-        tgt_date = datetime.strptime(target_date_str, "%m/%d/%Y").date()
-        splits   = yf.Ticker(sym).splits
-        if splits is None or splits.empty:
-            return 1.0
-        # Only splits after the target date
-        after = splits[splits.index.date > tgt_date]
-        if after.empty:
-            return 1.0
-        factor = 1.0
-        for ratio in after.values:
-            factor *= ratio
-        log.info(f"  {ticker}: split adjustment factor={factor:.4f} (splits after {tgt_date})")
-        return factor
-    except Exception as e:
-        log.warning(f"{ticker}: split check failed - {e}")
-        return 1.0
 
 
 def fetch_data(ticker: str):
@@ -169,53 +175,92 @@ def fetch_data(ticker: str):
 
 
 def crossed_into_zone_this_month(hist, upside, downside, threshold) -> bool:
-    """
-    Returns True if the stock crossed INTO the alert zone within the past month.
-    Logic: price ~1 month ago was OUTSIDE the zone, but has since entered it.
-    Uses the 60-day history already fetched — no extra API call needed.
-
-    "In zone" for upside  = price >= upside  * (1 - threshold)
-    "In zone" for downside = price <= downside * (1 + threshold)
-    """
+    """Returns True if price 22 trading days ago was outside the zone but now is inside."""
     if len(hist) < 22:
-        return True  # not enough history, default to showing
-
+        return True
     try:
-        # Price from ~1 month ago (22 trading days back)
         month_ago_close = float(hist["Close"].iloc[-22])
-
+        today_close     = float(hist["Close"].iloc[-1])
         if upside is not None:
             zone_floor = upside * (1 - threshold)
-            was_outside = month_ago_close < zone_floor
-            is_inside   = float(hist["Close"].iloc[-1]) >= zone_floor
-            if was_outside and is_inside:
+            if month_ago_close < zone_floor and today_close >= zone_floor:
                 return True
-
         if downside is not None:
-            zone_ceil   = downside * (1 + threshold)
-            was_outside = month_ago_close > zone_ceil
-            is_inside   = float(hist["Close"].iloc[-1]) <= zone_ceil
-            if was_outside and is_inside:
+            zone_ceil = downside * (1 + threshold)
+            if month_ago_close > zone_ceil and today_close <= zone_ceil:
                 return True
-
         return False
     except Exception as e:
         log.warning(f"Zone cross check failed: {e}")
         return True
 
 
+def get_split_adjustment(ticker: str, target_date_str: str) -> float:
+    sym = TICKER_MAP.get(ticker, ticker)
+    try:
+        tgt_date = datetime.strptime(target_date_str, "%m/%d/%Y").date()
+        splits   = yf.Ticker(sym).splits
+        if splits is None or splits.empty:
+            return 1.0
+        after = splits[splits.index.date > tgt_date]
+        if after.empty:
+            return 1.0
+        factor = 1.0
+        for ratio in after.values:
+            factor *= ratio
+        log.info(f"  {ticker}: split factor={factor:.4f}")
+        return factor
+    except Exception as e:
+        log.warning(f"{ticker}: split check failed - {e}")
+        return 1.0
+
+
 # ─────────────────────────────────────────────────────
-# STEP 3: DAILY DEDUP
+# STEP 4: REASON FOR FLAG
 # ─────────────────────────────────────────────────────
 
-LOOKBACK_DAYS = 30   # Alert if ticker entered zone at any point in past 30 days
+def reason_for_flag(alert: dict) -> str:
+    """Auto-generate the 'Reason for flag' text."""
+    p = alert.get("portfolio")  # 'Long' / 'Short' / None
+    side    = alert["alert_side"]
+    crossed = alert["crossed"]
+    pct     = alert["pct_upside"] if side == "upside" else alert["pct_downside"]
+    pct_abs = abs(pct) if pct is not None else 0
+
+    # Stale targets — extreme % away
+    if pct_abs > STALE_PCT:
+        return "*Targets may need update"
+
+    # Portfolio names
+    if p == "Short":
+        if side == "upside" and crossed:
+            return "Short is above upside"
+        if side == "upside" and pct_abs <= 7:
+            return "Short is near upside"
+
+    if p == "Long":
+        if side == "upside" and crossed:
+            return "Long above upside"
+        if side == "downside" and pct_abs <= 7:
+            return "Long near downside"
+        if side == "downside" and crossed:
+            return "Long below downside"
+
+    # Non-portfolio
+    if not p:
+        if side == "upside" and crossed:
+            return "Above upside"
+        if side == "downside" and crossed:
+            return "Below downside"
+
+    return ""
 
 
 # ─────────────────────────────────────────────────────
-# STEP 4: BUILD HTML TABLE
+# STEP 5: BUILD HTML
 # ─────────────────────────────────────────────────────
 
-def fmt_pct(pct: float, crossed: bool) -> str:
+def fmt_pct(pct, crossed):
     if pct is None:
         return "<span style='color:#ccc'>—</span>"
     color = "#c0392b" if crossed else "#333"
@@ -224,22 +269,72 @@ def fmt_pct(pct: float, crossed: bool) -> str:
     return f"<span style='color:{color};font-weight:{weight}'>{sign}{pct:.1f}%</span>"
 
 
-def fmt_rsi(rsi) -> str:
+def fmt_rsi(rsi):
     if rsi is None:
         return "<span style='color:#ccc'>—</span>"
     if rsi >= 70:
-        return f"<span style='color:#c0392b;font-weight:400'>{rsi}</span>"
+        return f"<span style='color:#c0392b'>{rsi}</span>"
     if rsi <= 30:
-        return f"<span style='color:#27ae60;font-weight:400'>{rsi}</span>"
+        return f"<span style='color:#27ae60'>{rsi}</span>"
     return str(rsi)
 
 
-def fmt_pt(val) -> str:
-    return f"{val:.2f}" if val is not None else "<span style='color:#ccc'>—</span>"
+def render_row(a, td):
+    """Render a single alert row."""
+    px      = a["price"]
+    up_pt   = a["upside_pt"]
+    dn_pt   = a["downside_pt"]
+    side    = a["alert_side"]
+    up_dist = abs(px - up_pt) if up_pt else float("inf")
+    dn_dist = abs(px - dn_pt) if dn_pt else float("inf")
+    bold_up = up_dist <= dn_dist
+    bold_dn = dn_dist <  up_dist
+
+    def _pt(val, bold):
+        if val is None:
+            return "<span style='color:#ccc'>—</span>"
+        s = f"{val:.2f}"
+        return f"<b>{s}</b>" if bold else s
+
+    pct_dn_str = fmt_pct(a["pct_downside"], a["crossed"] and side == "downside") \
+                 if side == "downside" else "<span style='color:#bbb'>--</span>"
+    pct_up_str = fmt_pct(a["pct_upside"],   a["crossed"] and side == "upside") \
+                 if side == "upside" else "<span style='color:#bbb'>--</span>"
+
+    portfolio_str = a.get("portfolio") or ""
+    reason_str    = a.get("reason") or ""
+
+    return (
+        f"<tr>"
+        f"<td style='{td}'><b>{a['ticker']}</b></td>"
+        f"<td style='{td};color:#555'>{portfolio_str}</td>"
+        f"<td style='{td};color:#555'>{side.capitalize()}</td>"
+        f"<td style='{td};text-align:right'><b>{px:.2f}</b></td>"
+        f"<td style='{td};text-align:right'>{_pt(dn_pt, bold_dn)}</td>"
+        f"<td style='{td};text-align:right'>{pct_dn_str}</td>"
+        f"<td style='{td};text-align:right'>{_pt(up_pt, bold_up)}</td>"
+        f"<td style='{td};text-align:right'>{pct_up_str}</td>"
+        f"<td style='{td};text-align:right'>{fmt_rsi(a['rsi'])}</td>"
+        f"<td style='{td};color:#888;font-size:12px;text-align:center'>{a['target_date']}</td>"
+        f"<td style='{td};color:#555;font-size:12px'>{reason_str}</td>"
+        f"</tr>"
+    )
 
 
-def build_html(alerts: list, today: str) -> str:
-    if not alerts:
+def render_section_header(title, td):
+    return (
+        f"<tr><td colspan='11' style='padding:14px 6px 6px 0;"
+        f"font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#1a3c6e'>"
+        f"{title}</td></tr>"
+    )
+
+
+def render_blank_row(td):
+    return f"<tr><td colspan='11' style='padding:4px 0'></td></tr>"
+
+
+def build_html(portfolio_alerts: list, non_portfolio_alerts: list, today: str) -> str:
+    if not portfolio_alerts and not non_portfolio_alerts:
         return (
             f"<p style='font-family:Arial,sans-serif;font-size:14px'>"
             f"<b>Contour Price Target Alert — {today}</b><br><br>"
@@ -248,45 +343,63 @@ def build_html(alerts: list, today: str) -> str:
 
     th = "padding:6px 10px;text-align:left;font-weight:500;font-size:12px;white-space:nowrap"
     td = "padding:5px 10px;font-size:13px;white-space:nowrap;border-bottom:1px solid #f0f0f0"
-    # Column min-widths to prevent Outlook from compressing columns
-    col_widths = [55, 65, 60, 80, 75, 75, 70, 40, 75]  # Ticker,Alert,Price,DnPT,%Dn,UpPT,%Up,RSI,Date
-
-    rows = ""
-    for a in alerts:
-        px         = a["price"]
-        up_pt      = a["upside_pt"]
-        dn_pt      = a["downside_pt"]
-        alert_side = a["alert_side"]
-        up_dist    = abs(px - up_pt) if up_pt else float("inf")
-        dn_dist    = abs(px - dn_pt) if dn_pt else float("inf")
-        bold_up    = up_dist <= dn_dist
-        bold_dn    = dn_dist <  up_dist
-
-        def _pt(val, bold):
-            if val is None:
-                return "<span style='color:#ccc'>—</span>"
-            s = f"{val:.2f}"
-            return f"<b>{s}</b>" if bold else s
-
-        # Only show the relevant % column; show "--" for the other
-        pct_dn_str = fmt_pct(a['pct_downside'], a['crossed'] and alert_side == 'downside')                      if alert_side == 'downside' else "<span style='color:#bbb'>--</span>"
-        pct_up_str = fmt_pct(a['pct_upside'], a['crossed'] and alert_side == 'upside')                      if alert_side == 'upside' else "<span style='color:#bbb'>--</span>"
-
-        rows += (
-            f"<tr>"
-            f"<td style='{td}'><b>{a['ticker']}</b></td>"
-            f"<td style='{td};color:#555'>{alert_side.capitalize()}</td>"
-            f"<td style='{td};text-align:right'><b>{a['price']:.2f}</b></td>"
-            f"<td style='{td};text-align:right'>{_pt(dn_pt, bold_dn)}</td>"
-            f"<td style='{td};text-align:right'>{pct_dn_str}</td>"
-            f"<td style='{td};text-align:right'>{_pt(up_pt, bold_up)}</td>"
-            f"<td style='{td};text-align:right'>{pct_up_str}</td>"
-            f"<td style='{td};text-align:right'>{fmt_rsi(a['rsi'])}</td>"
-            f"<td style='{td};color:#888;font-size:12px;text-align:center'>{a['target_date']}</td>"
-            f"</tr>"
-        )
-
+    col_widths = [55, 65, 60, 60, 80, 75, 75, 70, 40, 75, 180]
     colgroup = "".join(f"<col style='min-width:{w}px;width:{w}px'>" for w in col_widths)
+
+    body_rows = ""
+
+    # Portfolio Alerts section
+    if portfolio_alerts:
+        body_rows += render_section_header("Portfolio Alerts", td)
+        # Shorts first, then Longs; within each, sort by % upside descending (crossed first)
+        shorts = [a for a in portfolio_alerts if a.get("portfolio") == "Short"]
+        longs  = [a for a in portfolio_alerts if a.get("portfolio") == "Long"]
+
+        def port_sort(a):
+            pct = a["pct_upside"] if a["alert_side"] == "upside" else a["pct_downside"]
+            pct = pct if pct is not None else 0
+            return -pct  # most positive first
+
+        for a in sorted(shorts, key=port_sort):
+            body_rows += render_row(a, td)
+        if shorts and longs:
+            body_rows += render_blank_row(td)
+        for a in sorted(longs, key=port_sort):
+            body_rows += render_row(a, td)
+
+    # Non-portfolio Alerts section
+    if non_portfolio_alerts:
+        if portfolio_alerts:
+            body_rows += render_blank_row(td)
+        body_rows += render_section_header("Non-portfolio Alerts", td)
+
+        # Sub-groups
+        stale       = [a for a in non_portfolio_alerts if a.get("reason") == "*Targets may need update"]
+        upside_x    = [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "upside"  and a["crossed"]]
+        upside_app  = [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "upside"  and not a["crossed"]]
+        downside_x  = [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "downside" and a["crossed"]]
+        downside_app= [a for a in non_portfolio_alerts if a not in stale and a["alert_side"] == "downside" and not a["crossed"]]
+
+        # Stale first, then crossed by extremity, then approaching by closest
+        groups = []
+        if stale:
+            groups.append(sorted(stale,
+                                 key=lambda a: -abs(a["pct_upside"] if a["alert_side"]=="upside" else a["pct_downside"])))
+        if upside_x:
+            groups.append(sorted(upside_x, key=lambda a: -a["pct_upside"]))
+        if upside_app:
+            groups.append(sorted(upside_app, key=lambda a: abs(a["pct_upside"])))
+        if downside_x:
+            groups.append(sorted(downside_x, key=lambda a: a["pct_downside"]))
+        if downside_app:
+            groups.append(sorted(downside_app, key=lambda a: abs(a["pct_downside"])))
+
+        for i, g in enumerate(groups):
+            if i > 0:
+                body_rows += render_blank_row(td)
+            for a in g:
+                body_rows += render_row(a, td)
+
     return (
         f"<p style='font-family:Arial,sans-serif;font-size:15px;font-weight:600;margin-bottom:10px'>"
         f"Contour Price Target Alert — {today}</p>"
@@ -295,6 +408,7 @@ def build_html(alerts: list, today: str) -> str:
         f"<thead>"
         f"<tr style='background:#1a3c6e;color:white'>"
         f"<th style='{th}'>Ticker</th>"
+        f"<th style='{th}'>Portfolio</th>"
         f"<th style='{th}'>Alert</th>"
         f"<th style='{th};text-align:right'>Price</th>"
         f"<th style='{th};text-align:right'>Downside PT</th>"
@@ -303,18 +417,19 @@ def build_html(alerts: list, today: str) -> str:
         f"<th style='{th};text-align:right'>% Upside</th>"
         f"<th style='{th};text-align:right'>RSI</th>"
         f"<th style='{th};text-align:center'>PT Date</th>"
+        f"<th style='{th}'>Reason for flag</th>"
         f"</tr>"
         f"</thead>"
-        f"<tbody>{rows}</tbody>"
+        f"<tbody>{body_rows}</tbody>"
         f"</table>"
         f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:8px'>"
-        f"Red = crossed target &nbsp;|&nbsp; RSI &gt;70 red, &lt;30 green &nbsp;|&nbsp; "
-        f"Source: Contour-Price-Targets.csv</p>"
+        f"Red = crossed target | RSI &gt;70 red, &lt;30 green | "
+        f"Source: Contour-Price-Targets.csv + Contour-Portfolio-Delta-Adjusted.xlsx</p>"
     )
 
 
 # ─────────────────────────────────────────────────────
-# STEP 5: SEND VIA POWER AUTOMATE
+# STEP 6: SEND VIA POWER AUTOMATE
 # ─────────────────────────────────────────────────────
 
 def send_alert(html: str):
@@ -340,10 +455,12 @@ def run():
     log.info("=" * 55)
     log.info(f"Check starting - {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
 
-    targets = load_targets(CSV_PATH)
+    targets   = load_targets(CSV_PATH)
+    portfolio = load_portfolio(PORTFOLIO_PATH)
 
-    alerts_to_send = []
-    price_errors   = []
+    portfolio_alerts     = []
+    non_portfolio_alerts = []
+    price_errors         = []
 
     for ticker, info in sorted(targets.items()):
         upside   = info["upside"]
@@ -357,14 +474,11 @@ def run():
                 price_errors.append(ticker)
             continue
 
-        # Signed % difference
-        # Upside:   positive = above target (crossed), negative = approaching from below
-        # Downside: negative = below target (crossed), positive = approaching from above
+        # Signed % differences
         pct_upside   = round((price - upside)   / upside   * 100, 1) if upside   else None
         pct_downside = round((price - downside) / downside * 100, 1) if downside else None
 
-        # If either % is suspiciously large (>20%), check for post-target splits
-        # and adjust targets accordingly
+        # Split adjustment if extreme
         suspicious = (
             (pct_upside   is not None and abs(pct_upside)   > 20) or
             (pct_downside is not None and abs(pct_downside) > 20)
@@ -372,13 +486,11 @@ def run():
         if suspicious:
             factor = get_split_adjustment(ticker, tgt_date)
             if factor != 1.0:
-                if upside:
-                    upside   = round(upside   / factor, 2)
-                if downside:
-                    downside = round(downside / factor, 2)
+                if upside:   upside   = round(upside   / factor, 2)
+                if downside: downside = round(downside / factor, 2)
                 pct_upside   = round((price - upside)   / upside   * 100, 1) if upside   else None
                 pct_downside = round((price - downside) / downside * 100, 1) if downside else None
-                log.info(f"  {ticker}: targets adjusted for splits — up={upside} dn={downside}")
+                log.info(f"  {ticker}: targets adjusted up={upside} dn={downside}")
 
         triggered  = False
         crossed    = False
@@ -397,13 +509,13 @@ def run():
                 triggered = True; alert_side = alert_side or "downside"
 
         if triggered:
-            # Only include if price crossed INTO the zone within the past month
+            # Only include if crossed INTO zone in past month
             if not crossed_into_zone_this_month(hist, upside, downside, THRESHOLD):
-                log.debug(f"  {ticker}: in zone today but crossed in over a month ago, skipping.")
+                log.debug(f"  {ticker}: in zone but crossed in over a month ago, skipping.")
                 continue
 
-            log.info(f"  ALERT {ticker}: px={price}  up={upside}  dn={downside}  RSI={rsi}")
-            alerts_to_send.append({
+            port = portfolio.get(ticker)  # 'Long', 'Short', or None
+            alert = {
                 "ticker":       ticker,
                 "price":        price,
                 "upside_pt":    upside,
@@ -414,27 +526,25 @@ def run():
                 "target_date":  tgt_date,
                 "alert_side":   alert_side,
                 "crossed":      crossed,
-            })
+                "portfolio":    port,
+            }
+            alert["reason"] = reason_for_flag(alert)
 
-    # Sort: crossed first by highest absolute % breach (most extreme first),
-    # then approaching by closest to target
-    def sort_key(a):
-        pct = a["pct_upside"] if a["alert_side"] == "upside" else a["pct_downside"]
-        pct = pct if pct is not None else 0
-        if a["crossed"]:
-            return (0, -abs(pct))   # highest absolute breach first
-        else:
-            return (1, abs(pct))    # closest to target first
+            if port:
+                portfolio_alerts.append(alert)
+            else:
+                non_portfolio_alerts.append(alert)
 
-    alerts_to_send.sort(key=sort_key)
+            log.info(f"  ALERT {ticker}: px={price} side={alert_side} crossed={crossed} "
+                     f"port={port or '-'} reason='{alert['reason']}'")
 
     today = date.today().strftime("%B %d, %Y")
-    html  = build_html(alerts_to_send, today)
+    html  = build_html(portfolio_alerts, non_portfolio_alerts, today)
     send_alert(html)
 
     log.info(
         f"Done. {len(targets)} tickers checked | "
-        f"{len(alerts_to_send)} alerts | "
+        f"{len(portfolio_alerts)} portfolio + {len(non_portfolio_alerts)} non-portfolio alerts | "
         f"Price errors: {price_errors if price_errors else 'none'}"
     )
 
