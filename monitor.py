@@ -26,7 +26,7 @@ import requests
 POWER_AUTOMATE_URL = "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ec83745336c243eda45b7aec12638d18/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K-X9_sEQSPeYMwz1zq8y1wb5Fyb28bFvcicYB61F5Uo"
 
 CSV_PATH       = "Contour-Price-Targets.csv"
-PORTFOLIO_PATH = "Contour-Portfolio-Delta-Adjusted.xlsx"
+PORTFOLIO_PATH = "Contour_Portfolio_Delta_Adjusted.xlsx"
 THRESHOLD      = 0.10
 MAX_TARGET_AGE = 365      # 12 months
 
@@ -434,7 +434,7 @@ def build_html(portfolio_alerts: list, non_portfolio_alerts: list, today: str) -
         f"</table>"
         f"<p style='font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:8px'>"
         f"Red = crossed target | RSI &gt;70 red, &lt;30 green | "
-        f"Source: Contour-Price-Targets.csv + Contour-Portfolio-Delta-Adjusted.xlsx</p>"
+        f"Source: Contour-Price-Targets.csv + Contour_Portfolio_Delta_Adjusted.xlsx</p>"
     )
 
 
