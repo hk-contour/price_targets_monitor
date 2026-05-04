@@ -60,8 +60,8 @@ NUMERIC_TICKERS = {
     "4661": ("4661.T", "JP"),
     "6594": ("6594.T", "JP"),
     "6752": ("6752.T", "JP"),
-    "3034": ("3034.T", "JP"),
     "2330": ("2330.TW", "TT"),
+    "3034": ("3034.TW", "TT"),   # Novatek Microelectronics — Taiwan, NOT 3034.T (Japan pharmacy)
 }
 
 # Non-numeric tickers needing yfinance symbol mapping
@@ -379,16 +379,16 @@ def render_blank_row(td):
 
 def sort_within_group(alerts, prefer_upside_first=True):
     """
-    Sort: Upside-side alerts first (or downside first), then within each by signed %
-    descending (most positive = furthest from being broken).
+    Sort: most actionable (most broken/crossed = most negative %) at top,
+    least actionable (most cushion = most positive %) at bottom.
+    Within Upside-side group then Downside-side group.
     """
     upside_alerts   = [a for a in alerts if a["alert_side"] == "upside"]
     downside_alerts = [a for a in alerts if a["alert_side"] == "downside"]
 
-    # Within upside: sort by pct_upside_trader descending (most + at top, most negative at bottom)
-    upside_alerts.sort(key=lambda a: -(a["pct_upside_trader"] or 0))
-    # Within downside: same — most + (furthest cushion) at top, most negative (broken) at bottom
-    downside_alerts.sort(key=lambda a: -(a["pct_downside_trader"] or 0))
+    # Most negative (crossed/broken) at top, most positive (cushion) at bottom
+    upside_alerts.sort(key=lambda a: a["pct_upside_trader"] if a["pct_upside_trader"] is not None else 999)
+    downside_alerts.sort(key=lambda a: a["pct_downside_trader"] if a["pct_downside_trader"] is not None else 999)
 
     if prefer_upside_first:
         return upside_alerts + downside_alerts
