@@ -1,7 +1,5 @@
 {
   "2026-06-09": [
-    "6098",
-    "7751",
     "AAPL",
     "ADP",
     "AG1G",
@@ -10,7 +8,6 @@
     "BILL",
     "CDW",
     "CHH",
-    "CSCO",
     "CTAS",
     "DDOG",
     "DKNG",
@@ -26,8 +23,6 @@
     "MANH",
     "NYT",
     "OMC",
-    "ORCL",
-    "PINS",
     "PUBP",
     "QLYS",
     "RBLX",
@@ -36,11 +31,11 @@
     "RKT",
     "RUN",
     "SAPG",
-    "SEZL",
     "TRMB",
     "TTD",
     "VRSK",
     "XYZ",
-    "Z"
+    "Z",
+    "ZBRA"
   ]
 }
