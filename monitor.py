@@ -121,6 +121,51 @@ def _to_float(v):
         return None
 
 
+# ─── Alert log for "NEW" detection (yesterday's alerts) ───
+ALERT_LOG_PATH = "alerts_sent.json"
+
+def load_yesterday_alerts() -> set:
+    """Returns the set of tickers that were alerted on the most recent prior run."""
+    import json
+    if not os.path.exists(ALERT_LOG_PATH):
+        return set()
+    try:
+        with open(ALERT_LOG_PATH) as f:
+            data = json.load(f)
+        # data is { "YYYY-MM-DD": [tickers...] }; get the most recent date that's not today
+        today = date.today().isoformat()
+        prior_dates = sorted([d for d in data.keys() if d < today], reverse=True)
+        if prior_dates:
+            return set(data[prior_dates[0]])
+        return set()
+    except Exception as e:
+        log.warning(f"Failed to read alert log: {e}")
+        return set()
+
+
+def save_today_alerts(tickers: set):
+    """Persist today's alerted tickers, keeping last 7 days of history."""
+    import json
+    today = date.today().isoformat()
+    data = {}
+    if os.path.exists(ALERT_LOG_PATH):
+        try:
+            with open(ALERT_LOG_PATH) as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+    data[today] = sorted(list(tickers))
+    # Keep last 7 days only
+    cutoff = (date.today() - timedelta(days=7)).isoformat()
+    data = {k: v for k, v in data.items() if k >= cutoff}
+    try:
+        with open(ALERT_LOG_PATH, "w") as f:
+            json.dump(data, f, indent=2)
+        log.info(f"Saved {len(tickers)} tickers to {ALERT_LOG_PATH}")
+    except Exception as e:
+        log.warning(f"Failed to save alert log: {e}")
+
+
 # ─────────────────────────────────────────────────────
 # LOAD TARGETS
 # ─────────────────────────────────────────────────────
@@ -300,15 +345,20 @@ def reason_for_flag(alert: dict) -> str:
 # HTML BUILDERS
 # ─────────────────────────────────────────────────────
 
-def fmt_pct_trader(pct, is_active_side):
+def fmt_pct_trader(pct, is_active_side, side):
     """
-    Trader's view sign: positive = room to go (long-friendly cushion / short-side risk remaining),
-    negative = already crossed (target hit / stale).
+    Color logic (target PT / price - 1):
+      % Upside:   negative = price crossed ABOVE upside target → red
+      % Downside: positive = price crossed BELOW downside target → red
     Bold only when this is the active alert side.
     """
     if pct is None:
         return "<span style='color:#ccc'>—</span>"
-    color  = "#c0392b" if pct < 0 else "#333"
+    if side == "upside":
+        crossed = pct < 0
+    else:  # downside
+        crossed = pct > 0
+    color  = "#c0392b" if crossed else "#333"
     weight = "700"     if is_active_side else "400"
     sign   = "+" if pct > 0 else ""
     return f"<span style='color:{color};font-weight:{weight}'>{sign}{pct:.1f}%</span>"
@@ -332,16 +382,29 @@ def fmt_pt(val):
 
 def render_row(a, td):
     side = a["alert_side"]
-    pct_up = fmt_pct_trader(a["pct_upside_trader"],  side == "upside")
-    pct_dn = fmt_pct_trader(a["pct_downside_trader"], side == "downside")
+    pct_up = fmt_pct_trader(a["pct_upside_trader"],  side == "upside",   "upside")
+    pct_dn = fmt_pct_trader(a["pct_downside_trader"], side == "downside", "downside")
 
     portfolio_str = a.get("portfolio") or ""
     reason_str    = a.get("reason") or ""
     age_days      = a.get("pt_age_days", 0)
+    is_new        = a.get("is_new", False)
+
+    # NEW badge: bright orange pill, hard to miss
+    new_badge = ""
+    if is_new:
+        new_badge = (
+            "<span style='display:inline-block;background:#ff6b1a;color:white;"
+            "font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;"
+            "margin-right:6px;letter-spacing:0.5px'>NEW</span>"
+        )
+
+    # Highlight whole row subtly for NEW alerts
+    row_bg = "background:#fff7ed;" if is_new else ""
 
     return (
-        f"<tr>"
-        f"<td style='{td}'><b>{display_ticker(a['ticker'])}</b></td>"
+        f"<tr style='{row_bg}'>"
+        f"<td style='{td}'>{new_badge}<b>{display_ticker(a['ticker'])}</b></td>"
         f"<td style='{td};color:#555'>{portfolio_str}</td>"
         f"<td style='{td};color:#555'>{side.capitalize()}</td>"
         f"<td style='{td};text-align:right'>{a['price']:.2f}</td>"
@@ -379,16 +442,18 @@ def render_blank_row(td):
 
 def sort_within_group(alerts, prefer_upside_first=True):
     """
-    Sort: most actionable (most broken/crossed = most negative %) at top,
-    least actionable (most cushion = most positive %) at bottom.
-    Within Upside-side group then Downside-side group.
+    Sort: most actionable (crossed/broken) at top, least actionable (cushion) at bottom.
+    With new math (Target PT / Price - 1):
+      % Upside: negative = crossed → sort ascending (most negative first)
+      % Downside: positive = crossed → sort descending (most positive first)
     """
     upside_alerts   = [a for a in alerts if a["alert_side"] == "upside"]
     downside_alerts = [a for a in alerts if a["alert_side"] == "downside"]
 
-    # Most negative (crossed/broken) at top, most positive (cushion) at bottom
+    # Most negative % upside (crossed above upside) at top
     upside_alerts.sort(key=lambda a: a["pct_upside_trader"] if a["pct_upside_trader"] is not None else 999)
-    downside_alerts.sort(key=lambda a: a["pct_downside_trader"] if a["pct_downside_trader"] is not None else 999)
+    # Most positive % downside (crossed below downside) at top
+    downside_alerts.sort(key=lambda a: -(a["pct_downside_trader"] if a["pct_downside_trader"] is not None else -999))
 
     if prefer_upside_first:
         return upside_alerts + downside_alerts
@@ -401,6 +466,24 @@ def build_html(portfolio_alerts, non_portfolio_alerts, today):
             f"<p style='font-family:Arial,sans-serif;font-size:14px'>"
             f"<b>Contour Price Target Alert — {today}</b><br><br>"
             f"No tickers within 10% of their upside/downside price target today.</p>"
+        )
+
+    # Count NEW alerts for summary banner
+    all_alerts = portfolio_alerts + non_portfolio_alerts
+    new_count  = sum(1 for a in all_alerts if a.get("is_new"))
+    new_portfolio = sum(1 for a in portfolio_alerts if a.get("is_new"))
+
+    new_banner = ""
+    if new_count > 0:
+        port_text = f" (<b>{new_portfolio} portfolio</b>)" if new_portfolio else ""
+        new_banner = (
+            f"<p style='font-family:Arial,sans-serif;font-size:13px;"
+            f"background:#fff7ed;color:#9a3412;padding:10px 14px;"
+            f"border-left:4px solid #ff6b1a;margin:8px 0;font-weight:600'>"
+            f"<span style='background:#ff6b1a;color:white;font-size:10px;font-weight:700;"
+            f"padding:2px 6px;border-radius:3px;margin-right:8px;letter-spacing:0.5px'>NEW</span>"
+            f"{new_count} ticker{'s' if new_count != 1 else ''} newly entered the alert zone today{port_text}"
+            f"</p>"
         )
 
     no_port_banner = ""
@@ -460,6 +543,7 @@ def build_html(portfolio_alerts, non_portfolio_alerts, today):
     return (
         f"<p style='font-family:Arial,sans-serif;font-size:15px;font-weight:600;margin-bottom:10px'>"
         f"Contour Price Target Alert — {today}</p>"
+        f"{new_banner}"
         f"{no_port_banner}"
         f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;table-layout:fixed'>"
         f"<colgroup>{colgroup}</colgroup>"
@@ -515,12 +599,15 @@ def run():
     log.info("=" * 55)
     log.info(f"Check starting - {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
 
-    targets   = load_targets(CONFIG["csv_path"])
-    portfolio = load_portfolio(CONFIG["portfolio_path"])
+    targets         = load_targets(CONFIG["csv_path"])
+    portfolio       = load_portfolio(CONFIG["portfolio_path"])
+    yesterday_alerts = load_yesterday_alerts()
+    log.info(f"Loaded {len(yesterday_alerts)} tickers from yesterday's alert log.")
 
     portfolio_alerts     = []
     non_portfolio_alerts = []
     price_errors         = []
+    today_alerts         = set()
 
     for ticker, info in sorted(targets.items()):
         upside   = info["upside"]
@@ -551,11 +638,13 @@ def run():
                 pct_upside_math   = round((price - upside)   / upside   * 100, 1) if upside   else None
                 pct_downside_math = round((price - downside) / downside * 100, 1) if downside else None
 
-        # Trader's view % (sign-flipped):
-        # Upside:   positive while price below upside (room to go); negative once crossed
-        # Downside: positive while price above downside (cushion); negative once crossed
-        pct_upside_trader   = round((upside   - price) / price    * 100, 1) if upside   else None
-        pct_downside_trader = round((price - downside) / downside * 100, 1) if downside else None
+        # % math = Target PT / Current Price - 1 (expressed as percentage)
+        # % Upside positive  = Upside PT  is above current price (room to go up)
+        # % Upside negative  = price has crossed above upside target
+        # % Downside positive = Downside PT is above current price (price below downside, crossed)
+        # % Downside negative = Downside PT is below current price (cushion, not crossed)
+        pct_upside_trader   = round((upside   / price - 1) * 100, 1) if upside   else None
+        pct_downside_trader = round((downside / price - 1) * 100, 1) if downside else None
 
         triggered  = False
         crossed    = False
@@ -601,8 +690,10 @@ def run():
             "crossed":             crossed,
             "portfolio":           port,
             "pt_age_days":         pt_age_days,
+            "is_new":              ticker not in yesterday_alerts,
         }
         alert["reason"] = reason_for_flag(alert)
+        today_alerts.add(ticker)
 
         if port:
             portfolio_alerts.append(alert)
@@ -615,6 +706,7 @@ def run():
     today = date.today().strftime("%B %d, %Y")
     html  = build_html(portfolio_alerts, non_portfolio_alerts, today)
     send_alert(html)
+    save_today_alerts(today_alerts)
 
     log.info(
         f"Done. {len(targets)} tickers checked | "
