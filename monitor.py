@@ -125,19 +125,22 @@ def _to_float(v):
 ALERT_LOG_PATH = "alerts_sent.json"
 
 def load_yesterday_alerts() -> set:
-    """Returns the set of tickers that were alerted on the most recent prior run."""
+    """
+    Returns the set of tickers from the most recent saved state.
+    This compares against the LAST RUN, not "yesterday's date" specifically.
+    Works correctly for both daily production runs and same-day testing reruns.
+    """
     import json
     if not os.path.exists(ALERT_LOG_PATH):
         return set()
     try:
         with open(ALERT_LOG_PATH) as f:
             data = json.load(f)
-        # data is { "YYYY-MM-DD": [tickers...] }; get the most recent date that's not today
-        today = date.today().isoformat()
-        prior_dates = sorted([d for d in data.keys() if d < today], reverse=True)
-        if prior_dates:
-            return set(data[prior_dates[0]])
-        return set()
+        if not data:
+            return set()
+        # Take the most recent saved entry, regardless of date
+        most_recent_date = max(data.keys())
+        return set(data[most_recent_date])
     except Exception as e:
         log.warning(f"Failed to read alert log: {e}")
         return set()
