@@ -1,41 +1,4 @@
 {
-  "2026-06-11": [
-    "AAPL",
-    "ADP",
-    "AG1G",
-    "ANET",
-    "ARMK",
-    "BILL",
-    "CHH",
-    "CSCO",
-    "CTAS",
-    "DDOG",
-    "DKNG",
-    "DUOL",
-    "EBAY",
-    "EXLS",
-    "FICO",
-    "GRMN",
-    "LAMR",
-    "LOGI",
-    "LYFT",
-    "MANH",
-    "NYT",
-    "PUBP",
-    "QLYS",
-    "RBLX",
-    "RDDT",
-    "RHI",
-    "RKT",
-    "RUN",
-    "SAPG",
-    "SEZL",
-    "TRMB",
-    "VRSK",
-    "XYZ",
-    "Z",
-    "ZBRA"
-  ],
   "2026-06-12": [
     "AAPL",
     "ADP",
@@ -227,5 +190,10 @@
     "SEZL",
     "TRMB",
     "XYZ"
+  ],
+  "2026-06-19": [
+    "3034",
+    "PUBP",
+    "SAPG"
   ]
 }
