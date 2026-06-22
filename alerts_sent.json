@@ -155,6 +155,9 @@
     "SAPG"
   ],
   "2026-06-22": [
+    "3034",
+    "6098",
+    "7751",
     "AAPL",
     "ANET",
     "ARMK",
@@ -176,6 +179,7 @@
     "HUBS",
     "LAMR",
     "LOGI",
+    "LYFT",
     "NFLX",
     "NWSA",
     "NYT",
@@ -186,7 +190,6 @@
     "RKT",
     "SAPG",
     "SEZL",
-    "TER",
     "TRMB",
     "WIX",
     "XYZ"
