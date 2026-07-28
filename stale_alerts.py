@@ -76,7 +76,7 @@ CONFIG = {
     # connector — the same kind monitor.py uses). The flow reads the three
     # fields and sends the email, routing To dynamically per analyst.
     # Paste the new flow's HTTP POST URL here after you build it.
-    "power_automate_url":  "https://make.powerautomate.com/environments/Default-c3c9ee10-0427-4937-9437-645c69c5e53a/flows/bfdb9861-f0e6-4454-ac34-510b2db1a9a1?v3=true",
+    "power_automate_url":  "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/18/workflows/33f7e228caf94286bb2e010b73657138/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EKQ7c4Pr8kktKEPpGX90Us9e9Kit0tECPvz_89TDDts",
 
     # ── Acknowledge link ──────────────────────────────────────────────────────
     # The "Mark Updated" button uses a mailto fallback (a pre-filled email to
