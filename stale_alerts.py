@@ -682,8 +682,8 @@ def send_email(html: str, subject: str, to_email: str):
     "When a Teams webhook request is received" (standard/non-premium connector).
     The flow sends the email, routing To to the address passed here.
     """
-    html    = _to_entities(html)       # HTML-safe body
-    subject = _ascii_subject(subject)  # ASCII-safe subject
+    html    = _to_entities(html).strip()  # HTML-safe body, no stray whitespace
+    subject = _ascii_subject(subject)     # ASCII-safe subject
     payload = {"body": html, "subject": subject, "to": to_email}
 
     url = CONFIG["power_automate_url"]
