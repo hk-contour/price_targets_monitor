@@ -70,16 +70,19 @@ CONFIG = {
         "BK": "bronson.kussin@contourasset.com",
     },
 
-    # ── Power Automate webhook (same as monitor.py) ───────────────────────────
-    "power_automate_url": "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/31/workflows/acddb77a65844bd0b6d1e966030ffae4/triggers/manual/paths/invoke?api-version=1",
+    # ── Email delivery: Power Automate webhook (non-premium Teams trigger) ────
+    # This posts {body, subject, to} to a Power Automate flow whose trigger is
+    # "When a Teams webhook request is received" (a STANDARD, non-premium
+    # connector — the same kind monitor.py uses). The flow reads the three
+    # fields and sends the email, routing To dynamically per analyst.
+    # Paste the new flow's HTTP POST URL here after you build it.
+    "power_automate_url":  "https://make.powerautomate.com/environments/Default-c3c9ee10-0427-4937-9437-645c69c5e53a/flows/bfdb9861-f0e6-4454-ac34-510b2db1a9a1?v3=true",
 
-    # ── Acknowledge webhook (Power Automate HTTP trigger) ─────────────────────
-    # TODO: Create a Power Automate flow that:
-    #   1. Has an "HTTP request" trigger
-    #   2. Accepts GET ?ticker=X&analyst=Y
-    #   3. Appends a row to a SharePoint list (or Excel) logging the ack
-    #   Paste that flow's URL here.  Until then, acknowledgments are manual.
-    "ack_webhook_url":     "",  # e.g. https://prod-XX.eastus.logic.azure.com/workflows/...
+    # ── Acknowledge link ──────────────────────────────────────────────────────
+    # The "Mark Updated" button uses a mailto fallback (a pre-filled email to
+    # hari). If you later add a free intake (e.g. a Microsoft Form), paste its
+    # URL here and it will be used instead.
+    "ack_webhook_url":     "",
 
     # ── File paths (relative to repo root) ───────────────────────────────────
     "csv_path":            "Contour-Price-Targets.csv",
@@ -674,23 +677,32 @@ def _ascii_subject(s: str) -> str:
 
 
 def send_email(html: str, subject: str, to_email: str):
-    """Posts HTML body to Power Automate webhook (same as monitor.py)."""
-    html    = _to_entities(html)      # HTML-safe body
-    subject = _ascii_subject(subject) # ASCII-safe subject
+    """
+    Posts {body, subject, to} to the Power Automate flow whose trigger is
+    "When a Teams webhook request is received" (standard/non-premium connector).
+    The flow sends the email, routing To to the address passed here.
+    """
+    html    = _to_entities(html)       # HTML-safe body
+    subject = _ascii_subject(subject)  # ASCII-safe subject
     payload = {"body": html, "subject": subject, "to": to_email}
+
+    url = CONFIG["power_automate_url"]
+    if not url or url.startswith("PASTE_"):
+        log.error("  power_automate_url not set — cannot send. "
+                  "Build the flow and paste its URL into CONFIG.")
+        return
     try:
         resp = requests.post(
-            CONFIG["power_automate_url"],
-            json=payload,
+            url, json=payload,
             headers={"Content-Type": "application/json"},
-            timeout=15,
+            timeout=20,
         )
         if resp.status_code in (200, 202):
             log.info(f"  Email sent → {to_email} (subject: {subject[:60]})")
         else:
             log.error(f"  Webhook failed: HTTP {resp.status_code} — {resp.text[:200]}")
     except Exception as e:
-        log.error(f"  Send error: {e}")
+        log.error(f"  Send error for {to_email}: {e}")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN
