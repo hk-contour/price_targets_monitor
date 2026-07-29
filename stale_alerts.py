@@ -78,11 +78,12 @@ CONFIG = {
     # Paste the new flow's HTTP POST URL here after you build it.
     "power_automate_url":  "https://defaultc3c9ee10042749379437645c69c5e5.3a.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/18/workflows/33f7e228caf94286bb2e010b73657138/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EKQ7c4Pr8kktKEPpGX90Us9e9Kit0tECPvz_89TDDts",
 
-    # ── Acknowledge link ──────────────────────────────────────────────────────
-    # The "Mark Updated" button uses a mailto fallback (a pre-filled email to
-    # hari). If you later add a free intake (e.g. a Microsoft Form), paste its
-    # URL here and it will be used instead.
-    "ack_webhook_url":     "",
+    # ── Analyst action: email the price-targets inbox ─────────────────────────
+    # The button in each alert opens a pre-filled email to this inbox. The
+    # analyst sends the updated target (or "no change"); ops updates the master
+    # spreadsheet from there. Once the sheet's BeginDate is refreshed, the
+    # script auto-detects the new target and stops nudging — no manual reset.
+    "pricetargets_inbox":  "pricetargets@contourasset.com",
 
     # ── File paths (relative to repo root) ───────────────────────────────────
     "csv_path":            "Contour-Price-Targets.csv",
@@ -289,34 +290,40 @@ def staleness_reasons(ticker: str, info: dict, price: float) -> tuple[list[str],
       reasons          — list of human-readable reason strings; empty = not stale
       adjusted_targets — {'upside', 'downside'} after any split rebasing (for display)
 
+    The two targets define an expected RANGE [downside, upside]. A price inside
+    that band is the thesis playing out — NOT stale, no flag. A name is only
+    flagged on price when it breaks OUT of the band by the threshold.
+
     Conditions (any one flags the name):
       1. PT age >= stale_age_days
-      2. Split-adjusted price drifted >= price_drift_pct (30%) from upside OR downside
-      3. Split-adjusted price drifted >= drift_pct_with_age (20%) from upside OR
-         downside AND PT older than drift_age_days (180d)   [monitor.py parity]
+      2. Split-adjusted price is >= price_drift_pct (30%) ABOVE the upside PT
+         OR >= price_drift_pct (30%) BELOW the downside PT
+      3. Same as (2) but >= drift_pct_with_age (20%) beyond the band edge AND
+         PT older than drift_age_days (180d)
     """
     reasons  = []
     upside   = info["upside"]
     downside = info["downside"]
     age_days = info["age_days"]
 
-    extreme = CONFIG["price_drift_pct"]        # 0.30
-    mild    = CONFIG["drift_pct_with_age"]     # 0.20
+    extreme  = CONFIG["price_drift_pct"]       # 0.30
+    mild     = CONFIG["drift_pct_with_age"]    # 0.20
     mild_age = CONFIG["drift_age_days"]        # 180
+    trig     = CONFIG["split_adjust_trigger_pct"]
 
     # ── Condition 1: age ──────────────────────────────────────────────────────
     if age_days >= CONFIG["stale_age_days"]:
         reasons.append(f"PT not updated in {age_days} days (threshold: {CONFIG['stale_age_days']}d)")
 
     # ── Split adjustment guard ────────────────────────────────────────────────
-    # If raw drift looks extreme, a stock split may be the cause. Rebase the
-    # target by the post-target-date split factor before judging drift.
-    def raw_drift(t):
-        return abs(price / t - 1) if t else 0.0
-
-    suspicious = (raw_drift(upside) > CONFIG["split_adjust_trigger_pct"] or
-                  raw_drift(downside) > CONFIG["split_adjust_trigger_pct"])
-    if suspicious:
+    # A split makes the price land wildly OUTSIDE the target band. If the price
+    # is beyond an edge by more than the trigger, check for a post-target split
+    # and rebase the targets before judging the breakout.
+    beyond_band = (
+        (upside   is not None and price > upside   * (1 + trig)) or
+        (downside is not None and price < downside * (1 - trig))
+    )
+    if beyond_band:
         factor = get_split_factor(ticker, info["date"])
         if factor != 1.0:
             if upside:   upside   = round(upside   / factor, 2)
@@ -324,23 +331,24 @@ def staleness_reasons(ticker: str, info: dict, price: float) -> tuple[list[str],
             log.info(f"  {ticker}: applied split factor {factor:.4f} → "
                      f"upside={upside}, downside={downside}")
 
-    # ── Conditions 2 & 3: drift (on split-adjusted targets) ───────────────────
-    def drift_reason(pt, label):
-        if not pt:
-            return None
-        drift = abs(price / pt - 1)
-        direction = "above" if price > pt else "below"
-        if drift >= extreme:
-            return f"Price ${price:.2f} is {drift*100:.0f}% {direction} {label} PT ${pt:.2f}"
-        if drift >= mild and age_days > mild_age:
-            return (f"Price ${price:.2f} is {drift*100:.0f}% {direction} {label} PT "
-                    f"${pt:.2f} and PT is {age_days}d old")
-        return None
+    # ── Conditions 2 & 3: price broke OUT of the target band ──────────────────
+    # Above the UPSIDE ceiling:
+    if upside is not None and price > upside:
+        pct_above = price / upside - 1
+        if pct_above >= extreme:
+            reasons.append(f"Price ${price:.2f} is {pct_above*100:.0f}% above upside PT ${upside:.2f}")
+        elif pct_above >= mild and age_days > mild_age:
+            reasons.append(f"Price ${price:.2f} is {pct_above*100:.0f}% above upside PT "
+                           f"${upside:.2f} and PT is {age_days}d old")
 
-    for pt, label in [(upside, "upside"), (downside, "downside")]:
-        r = drift_reason(pt, label)
-        if r:
-            reasons.append(r)
+    # Below the DOWNSIDE floor:
+    if downside is not None and price < downside:
+        pct_below = 1 - price / downside
+        if pct_below >= extreme:
+            reasons.append(f"Price ${price:.2f} is {pct_below*100:.0f}% below downside PT ${downside:.2f}")
+        elif pct_below >= mild and age_days > mild_age:
+            reasons.append(f"Price ${price:.2f} is {pct_below*100:.0f}% below downside PT "
+                           f"${downside:.2f} and PT is {age_days}d old")
 
     return reasons, {"upside": upside, "downside": downside}
 
@@ -406,17 +414,25 @@ def alert_status(ticker: str, state: dict, info: dict) -> str:
 # EMAIL BUILDER
 # ─────────────────────────────────────────────────────────────────────────────
 
-def ack_link(ticker: str, analyst: str) -> str:
-    """Returns an acknowledge URL if configured, else a mailto fallback."""
-    base = CONFIG.get("ack_webhook_url", "").strip()
-    if base:
-        return f"{base}?ticker={ticker}&analyst={analyst}"
-    # Fallback: mailto with pre-filled subject so hari can manually log ack
-    return (
-        f"mailto:hari.kumar@contourasset.com"
-        f"?subject=ACK%3A%20{ticker}"
-        f"&body=Acknowledging%20price%20target%20for%20{ticker}%20—%20will%20update%20shortly."
+def ack_link(ticker: str, analyst: str, price=None, upside=None, downside=None) -> str:
+    """
+    Builds a pre-filled mailto to the price-targets inbox for this ticker.
+    The analyst fills in the new levels (or writes 'no change') and sends;
+    ops updates the master spreadsheet from the inbox.
+    """
+    from urllib.parse import quote
+    inbox = CONFIG["pricetargets_inbox"]
+    subject = f"Price Target Update: {ticker}"
+    body = (
+        f"Ticker: {ticker}\n"
+        f"Current price: {f'${price:.2f}' if price else ''}\n"
+        f"Current target range: {f'${downside:.2f}' if downside else '-'} (downside) / "
+        f"{f'${upside:.2f}' if upside else '-'} (upside)\n\n"
+        f"New Upside PT: \n"
+        f"New Downside PT: \n\n"
+        f"(Or reply 'no change' to confirm the current target still stands and pause reminders.)"
     )
+    return f"mailto:{inbox}?subject={quote(subject)}&body={quote(body)}"
 
 
 def build_analyst_email(analyst_code: str, alerts: list, is_second: bool) -> str:
@@ -435,7 +451,8 @@ def build_analyst_email(analyst_code: str, alerts: list, is_second: bool) -> str
     rows = ""
     for a in alerts:
         reason_html = "<br>".join(a["reasons"])
-        ack_url = ack_link(a["ticker"], analyst_code)
+        ack_url = ack_link(a["ticker"], analyst_code,
+                           price=a["price"], upside=a["upside"], downside=a["downside"])
         upside_str   = f"${a['upside']:.2f}"   if a["upside"]   else "—"
         downside_str = f"${a['downside']:.2f}" if a["downside"] else "—"
         rows += (
@@ -449,7 +466,7 @@ def build_analyst_email(analyst_code: str, alerts: list, is_second: bool) -> str
             f"<td style='{td};text-align:center'>"
             f"<a href='{ack_url}' style='background:#1a3c6e;color:white;padding:4px 10px;"
             f"border-radius:4px;font-size:11px;text-decoration:none;font-weight:600'>"
-            f"Mark Updated ✓</a></td>"
+            f"Email Update</a></td>"
             f"</tr>"
         )
 
@@ -469,11 +486,12 @@ def build_analyst_email(analyst_code: str, alerts: list, is_second: bool) -> str
     {"This is a <b>second reminder</b> — the following" if is_second else "The following"}
     price target{'s' if len(alerts) != 1 else ''} in your coverage
     {'have' if len(alerts) != 1 else 'has'} not been updated recently or
-    {'have' if len(alerts) != 1 else 'has'} drifted significantly from the current price.
-    Please review and update in the
-    <a href="https://contourassetmgmt-my.sharepoint.com/:x:/r/personal/hari_kumar_contourasset_com/_layouts/15/Doc.aspx?sourcedoc=%7BF34FAAAE-2AA6-4132-B9D3-4B8C5F416DFA%7D&file=Contour-Price-Targets.xlsx"
-       style="color:{intro_color};font-weight:600">Price Targets spreadsheet</a>,
-    then click <b>Mark Updated</b> next to each name to stop receiving reminders.
+    {'have' if len(alerts) != 1 else 'has'} moved outside the target range.
+    For each name, click <b>Email Update</b> to send your revised upside/downside
+    (or "no change") to
+    <a href="mailto:{CONFIG['pricetargets_inbox']}" style="color:{intro_color};font-weight:600">{CONFIG['pricetargets_inbox']}</a>.
+    The desk updates the master price-targets file from there, and reminders stop
+    automatically once the target is refreshed.
   </div>
 
   <table style="border-collapse:collapse;font-family:Arial,sans-serif;width:100%">
@@ -644,8 +662,9 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
 {excl_html}
 {err_html}
 <p style="font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:16px">
-  Signals: PT age ≥ {CONFIG['stale_age_days']}d, OR price {int(CONFIG['price_drift_pct']*100)}%+ from a target,
-  OR {int(CONFIG['drift_pct_with_age']*100)}%+ from a target with PT older than {CONFIG['drift_age_days']}d.
+  Signals: PT age ≥ {CONFIG['stale_age_days']}d, OR price {int(CONFIG['price_drift_pct']*100)}%+ outside the
+  target range (above the upside PT or below the downside PT), OR {int(CONFIG['drift_pct_with_age']*100)}%+
+  outside with PT older than {CONFIG['drift_age_days']}d. Prices within the upside/downside band are not flagged.
   Prices are split-adjusted. Flip test_mode=False in CONFIG to send directly to analysts.
 </p>
 """
@@ -690,7 +709,7 @@ def send_email(html: str, subject: str, to_email: str):
     if not url or url.startswith("PASTE_"):
         log.error("  power_automate_url not set — cannot send. "
                   "Build the flow and paste its URL into CONFIG.")
-        return
+        return False
     try:
         resp = requests.post(
             url, json=payload,
@@ -698,11 +717,13 @@ def send_email(html: str, subject: str, to_email: str):
             timeout=20,
         )
         if resp.status_code in (200, 202):
-            log.info(f"  Email sent → {to_email} (subject: {subject[:60]})")
-        else:
-            log.error(f"  Webhook failed: HTTP {resp.status_code} — {resp.text[:200]}")
+            log.info(f"  Email sent -> {to_email} (subject: {subject[:60]})")
+            return True
+        log.error(f"  Webhook failed: HTTP {resp.status_code} — {resp.text[:200]}")
+        return False
     except Exception as e:
         log.error(f"  Send error for {to_email}: {e}")
+        return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN
@@ -814,13 +835,8 @@ def run():
         }
 
         analyst_alerts.setdefault(analyst_code, []).append(alert_entry)
-
-        # Update state
-        today_str = today.isoformat()
-        if is_second:
-            state["second_alert"][ticker] = {"date": today_str, "analyst": analyst_code}
-        else:
-            state["first_alert"][ticker] = {"date": today_str, "analyst": analyst_code}
+        # NOTE: state is updated AFTER a successful send (see send section below),
+        # so a failed delivery never suppresses a future nudge.
 
     # ── Log summary counts ────────────────────────────────────────────────────
     total_alerts = sum(len(v) for v in analyst_alerts.values())
@@ -835,7 +851,18 @@ def run():
         log.warning(f"Price fetch errors: {price_errors}")
 
     # ── Send per-analyst emails (routed to test_email if test_mode) ────────────
+    # State is recorded ONLY for tickers whose email actually sent, so a failed
+    # delivery leaves them eligible to re-fire on the next run.
+    today_str = today.isoformat()
+
+    def record_state(alerts_batch):
+        for a in alerts_batch:
+            bucket = "second_alert" if a["is_second"] else "first_alert"
+            state[bucket][a["ticker"]] = {"date": today_str, "analyst": a["_analyst"]}
+
     for analyst_code, alerts in sorted(analyst_alerts.items()):
+        for a in alerts:
+            a["_analyst"] = analyst_code
         first_alerts  = [a for a in alerts if not a["is_second"]]
         second_alerts = [a for a in alerts if a["is_second"]]
 
@@ -845,22 +872,30 @@ def run():
             html    = build_analyst_email(analyst_code, first_alerts, is_second=False)
             subject = f"Action Required: {len(first_alerts)} Price Target(s) Need Update"
             if CONFIG["test_mode"]:
-                subject = f"[TEST → {analyst_code}] {subject}"
-            send_email(html, subject, to_email)
+                subject = f"[TEST -> {analyst_code}] {subject}"
+            if send_email(html, subject, to_email):
+                record_state(first_alerts)
+            else:
+                log.error(f"  {analyst_code}: first-nudge email failed — state NOT updated, "
+                          f"will retry next run.")
 
         if second_alerts:
             html    = build_analyst_email(analyst_code, second_alerts, is_second=True)
-            subject = f"⚠️ Second Reminder: {len(second_alerts)} Price Target(s) Still Unupdated"
+            subject = f"Second Reminder: {len(second_alerts)} Price Target(s) Still Unupdated"
             if CONFIG["test_mode"]:
-                subject = f"[TEST → {analyst_code}] {subject}"
-            send_email(html, subject, to_email)
+                subject = f"[TEST -> {analyst_code}] {subject}"
+            if send_email(html, subject, to_email):
+                record_state(second_alerts)
+            else:
+                log.error(f"  {analyst_code}: second-nudge email failed — state NOT updated, "
+                          f"will retry next run.")
 
     # ── Always send a run-summary to hari (audit trail + safeguards) ───────────
     summary_html = build_summary_email(
         analyst_alerts, skipped_no_port, needs_analyst,
         price_errors, snapshot_warning, pf_meta
     )
-    summary_subject = f"Stale PT Alert Summary — {today.strftime('%b %d')} — {total_alerts} alert(s)"
+    summary_subject = f"Stale PT Alert Summary - {today.strftime('%b %d')} - {total_alerts} alert(s)"
     send_email(summary_html, summary_subject, CONFIG["test_email"])
 
     save_state(state, CONFIG["state_path"])
