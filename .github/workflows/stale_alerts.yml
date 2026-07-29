@@ -2,9 +2,10 @@ name: Stale Price Target Alerts
 
 on:
   schedule:
-    # 8:00 AM ET on weekdays (UTC-4 in summer / UTC-5 in winter)
-    # Using 12:00 UTC covers ET summer (8am) — adjust to 13:00 in winter
-    - cron: "0 12 * * 1-5"
+    # Weekly, Friday morning ~8:00 AM ET.
+    # 12:00 UTC = 8 AM ET in summer (EDT); in winter (EST) it's 7 AM ET —
+    # change to "0 13 * * 5" if you want to hold 8 AM year-round.
+    - cron: "0 12 * * 5"
   workflow_dispatch:   # allows manual trigger from GitHub Actions tab
 
 jobs:
