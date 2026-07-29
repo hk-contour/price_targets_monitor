@@ -41,17 +41,13 @@ import requests
 # ─────────────────────────────────────────────────────────────────────────────
 
 CONFIG = {
-    # ── Staleness thresholds ──────────────────────────────────────────────────
-    "stale_age_days":      135,    # Alert if PT hasn't been updated in this many days
-    "price_drift_pct":     0.30,   # Alert if price drifted 30%+ from upside OR downside PT
+    # ── Flag rule (BOTH conditions required) ──────────────────────────────────
+    # A name flags only if it is stale by age AND price has broken out of the band.
+    "stale_age_days":      135,    # Condition 1: PT not updated in >= this many days
+    "price_drift_pct":     0.30,   # Condition 2: price >= this % above upside OR below downside
 
-    # Secondary drift tier (mirrors monitor.py "Targets may need update"):
-    # a smaller drift still flags IF the target is also fairly old.
-    "drift_pct_with_age":  0.20,   # 20%+ drift ...
-    "drift_age_days":      180,    # ... combined with a PT older than 180 days
-
-    # Split-adjustment guard: if raw drift exceeds this, check for a stock split
-    # before flagging (a split can look like a huge drift). Ported from monitor.py.
+    # Split-adjustment guard: if price is this far beyond a band edge, check for a
+    # stock split before flagging (a split can look like a huge breakout).
     "split_adjust_trigger_pct": 0.20,
 
     # ── Alert cadence ─────────────────────────────────────────────────────────
@@ -290,30 +286,26 @@ def staleness_reasons(ticker: str, info: dict, price: float) -> tuple[list[str],
       reasons          — list of human-readable reason strings; empty = not stale
       adjusted_targets — {'upside', 'downside'} after any split rebasing (for display)
 
-    The two targets define an expected RANGE [downside, upside]. A price inside
-    that band is the thesis playing out — NOT stale, no flag. A name is only
-    flagged on price when it breaks OUT of the band by the threshold.
+    Flag rule — BOTH must be true (portfolio membership is enforced upstream):
+      1. PT is stale by age:  age_days >= stale_age_days (135d), AND
+      2. Price is >= price_drift_pct (30%) OUTSIDE the target band:
+           price >= 30% ABOVE the upside PT, OR
+           price >= 30% BELOW the downside PT.
 
-    Conditions (any one flags the name):
-      1. PT age >= stale_age_days
-      2. Split-adjusted price is >= price_drift_pct (30%) ABOVE the upside PT
-         OR >= price_drift_pct (30%) BELOW the downside PT
-      3. Same as (2) but >= drift_pct_with_age (20%) beyond the band edge AND
-         PT older than drift_age_days (180d)
+    A price inside the [downside, upside] band never flags, no matter how old.
+    An old-but-in-range target never flags. A big breakout on a fresh (<135d)
+    target never flags. Only stale-AND-broken-out fires.
     """
-    reasons  = []
     upside   = info["upside"]
     downside = info["downside"]
     age_days = info["age_days"]
 
     extreme  = CONFIG["price_drift_pct"]       # 0.30
-    mild     = CONFIG["drift_pct_with_age"]    # 0.20
-    mild_age = CONFIG["drift_age_days"]        # 180
     trig     = CONFIG["split_adjust_trigger_pct"]
 
-    # ── Condition 1: age ──────────────────────────────────────────────────────
-    if age_days >= CONFIG["stale_age_days"]:
-        reasons.append(f"PT not updated in {age_days} days (threshold: {CONFIG['stale_age_days']}d)")
+    # ── Condition 1: must be stale by age. If not, stop — nothing flags. ───────
+    if age_days < CONFIG["stale_age_days"]:
+        return [], {"upside": upside, "downside": downside}
 
     # ── Split adjustment guard ────────────────────────────────────────────────
     # A split makes the price land wildly OUTSIDE the target band. If the price
@@ -331,24 +323,15 @@ def staleness_reasons(ticker: str, info: dict, price: float) -> tuple[list[str],
             log.info(f"  {ticker}: applied split factor {factor:.4f} → "
                      f"upside={upside}, downside={downside}")
 
-    # ── Conditions 2 & 3: price broke OUT of the target band ──────────────────
-    # Above the UPSIDE ceiling:
-    if upside is not None and price > upside:
-        pct_above = price / upside - 1
-        if pct_above >= extreme:
-            reasons.append(f"Price ${price:.2f} is {pct_above*100:.0f}% above upside PT ${upside:.2f}")
-        elif pct_above >= mild and age_days > mild_age:
-            reasons.append(f"Price ${price:.2f} is {pct_above*100:.0f}% above upside PT "
-                           f"${upside:.2f} and PT is {age_days}d old")
-
-    # Below the DOWNSIDE floor:
-    if downside is not None and price < downside:
-        pct_below = 1 - price / downside
-        if pct_below >= extreme:
-            reasons.append(f"Price ${price:.2f} is {pct_below*100:.0f}% below downside PT ${downside:.2f}")
-        elif pct_below >= mild and age_days > mild_age:
-            reasons.append(f"Price ${price:.2f} is {pct_below*100:.0f}% below downside PT "
-                           f"${downside:.2f} and PT is {age_days}d old")
+    # ── Condition 2: price must be >=30% outside the band ─────────────────────
+    reasons = []
+    age_note = f"PT not updated in {age_days} days"
+    if upside is not None and price > upside and (price / upside - 1) >= extreme:
+        pct = (price / upside - 1) * 100
+        reasons.append(f"{age_note} and price ${price:.2f} is {pct:.0f}% above upside PT ${upside:.2f}")
+    elif downside is not None and price < downside and (1 - price / downside) >= extreme:
+        pct = (1 - price / downside) * 100
+        reasons.append(f"{age_note} and price ${price:.2f} is {pct:.0f}% below downside PT ${downside:.2f}")
 
     return reasons, {"upside": upside, "downside": downside}
 
@@ -662,10 +645,10 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
 {excl_html}
 {err_html}
 <p style="font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:16px">
-  Signals: PT age ≥ {CONFIG['stale_age_days']}d, OR price {int(CONFIG['price_drift_pct']*100)}%+ outside the
-  target range (above the upside PT or below the downside PT), OR {int(CONFIG['drift_pct_with_age']*100)}%+
-  outside with PT older than {CONFIG['drift_age_days']}d. Prices within the upside/downside band are not flagged.
-  Prices are split-adjusted. Flip test_mode=False in CONFIG to send directly to analysts.
+  Flag rule (both required): PT not updated in ≥ {CONFIG['stale_age_days']}d AND price {int(CONFIG['price_drift_pct']*100)}%+
+  outside the target range (above the upside PT or below the downside PT). A price within the band, or a
+  breakout on a target newer than {CONFIG['stale_age_days']}d, is not flagged. Prices are split-adjusted.
+  Flip test_mode=False in CONFIG to send directly to analysts.
 </p>
 """
 
