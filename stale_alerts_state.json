@@ -1,5 +1,258 @@
 {
-  "first_alert": {},
-  "second_alert": {},
-  "acknowledged": {}
+  "acknowledged": {},
+  "first_alert": {
+    "4324": {
+      "analyst": "BK",
+      "date": "2026-07-29"
+    },
+    "6098": {
+      "analyst": "BK",
+      "date": "2026-07-29"
+    },
+    "7974": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "ADBE": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "ADI": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "AMAT": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "AMD": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "AMZN": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "ANET": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "ASML": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "BKNG": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "BL": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "BSY": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "CBZ": {
+      "analyst": "BK",
+      "date": "2026-07-29"
+    },
+    "CGNX": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "CHYM": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "CIEN": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "CRCL": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "CRM": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "CROX": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "CRWD": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "CSGP": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "CVLT": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "CVNA": {
+      "analyst": "BK",
+      "date": "2026-07-29"
+    },
+    "DDOG": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "DOCS": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "DT": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "DUOL": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "DV": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "ETSY": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "FIG": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "GTM": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "GWRE": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "HUBS": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "INTU": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "KVYO": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "MDB": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "MKSI": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "MRVL": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "NOK": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "NTAP": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "NTNX": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "OMC": {
+      "analyst": "BK",
+      "date": "2026-07-29"
+    },
+    "ON": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "ORCL": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "PANW": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "PATH": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "PAYC": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "PCOR": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "PCTY": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "PEGA": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "QCOM": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "QLYS": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "RNG": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "RUN": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "SNAP": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "UPS": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "UPST": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    },
+    "VEEV": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "VERX": {
+      "analyst": "BT",
+      "date": "2026-07-29"
+    },
+    "VRNS": {
+      "analyst": "MS",
+      "date": "2026-07-29"
+    },
+    "YOU": {
+      "analyst": "SS",
+      "date": "2026-07-29"
+    },
+    "ZIP": {
+      "analyst": "JC",
+      "date": "2026-07-29"
+    }
+  },
+  "second_alert": {}
 }
