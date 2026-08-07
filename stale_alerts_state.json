@@ -254,5 +254,66 @@
       "date": "2026-07-29"
     }
   },
-  "second_alert": {}
+  "second_alert": {
+    "ADBE": {
+      "analyst": "BT",
+      "date": "2026-08-07"
+    },
+    "AMAT": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "AMD": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "CGNX": {
+      "analyst": "BT",
+      "date": "2026-08-07"
+    },
+    "CIEN": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "CSGP": {
+      "analyst": "JC",
+      "date": "2026-08-07"
+    },
+    "DOCS": {
+      "analyst": "BT",
+      "date": "2026-08-07"
+    },
+    "ETSY": {
+      "analyst": "JC",
+      "date": "2026-08-07"
+    },
+    "GTM": {
+      "analyst": "BT",
+      "date": "2026-08-07"
+    },
+    "MRVL": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "NOK": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "NTAP": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "PANW": {
+      "analyst": "MS",
+      "date": "2026-08-07"
+    },
+    "UPST": {
+      "analyst": "JC",
+      "date": "2026-08-07"
+    },
+    "VERX": {
+      "analyst": "BT",
+      "date": "2026-08-07"
+    }
+  }
 }
