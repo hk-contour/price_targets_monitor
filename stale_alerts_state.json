@@ -259,6 +259,10 @@
       "analyst": "BT",
       "date": "2026-08-07"
     },
+    "ADI": {
+      "analyst": "MS",
+      "date": "2026-08-14"
+    },
     "AMAT": {
       "analyst": "MS",
       "date": "2026-08-07"
@@ -266,6 +270,10 @@
     "AMD": {
       "analyst": "MS",
       "date": "2026-08-07"
+    },
+    "ASML": {
+      "analyst": "MS",
+      "date": "2026-08-14"
     },
     "CGNX": {
       "analyst": "BT",
