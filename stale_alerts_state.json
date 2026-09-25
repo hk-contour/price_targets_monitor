@@ -37,6 +37,10 @@
       "analyst": "MS",
       "date": "2026-07-29"
     },
+    "ARM": {
+      "analyst": "MS",
+      "date": "2026-09-25"
+    },
     "ASML": {
       "analyst": "MS",
       "date": "2026-07-29"
@@ -136,6 +140,10 @@
     "HUBS": {
       "analyst": "BT",
       "date": "2026-07-29"
+    },
+    "INTC": {
+      "analyst": "MS",
+      "date": "2026-09-25"
     },
     "INTU": {
       "analyst": "SS",
@@ -287,9 +295,17 @@
       "analyst": "JC",
       "date": "2026-08-07"
     },
+    "DDOG": {
+      "analyst": "MS",
+      "date": "2026-09-25"
+    },
     "DOCS": {
       "analyst": "BT",
       "date": "2026-08-07"
+    },
+    "DT": {
+      "analyst": "MS",
+      "date": "2026-09-25"
     },
     "ETSY": {
       "analyst": "JC",
@@ -314,6 +330,10 @@
     "PANW": {
       "analyst": "MS",
       "date": "2026-08-07"
+    },
+    "RNG": {
+      "analyst": "BT",
+      "date": "2026-09-25"
     },
     "RUN": {
       "analyst": "SS",
