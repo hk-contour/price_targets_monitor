@@ -279,6 +279,10 @@
       "analyst": "MS",
       "date": "2026-08-07"
     },
+    "ARM": {
+      "analyst": "MS",
+      "date": "2026-10-02"
+    },
     "ASML": {
       "analyst": "MS",
       "date": "2026-08-14"
@@ -314,6 +318,10 @@
     "GTM": {
       "analyst": "BT",
       "date": "2026-08-07"
+    },
+    "INTC": {
+      "analyst": "MS",
+      "date": "2026-10-02"
     },
     "MRVL": {
       "analyst": "MS",
