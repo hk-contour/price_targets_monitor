@@ -293,11 +293,13 @@
     "ZETA"
   ],
   "2026-10-08": [
+    "6098",
+    "7751",
     "AAPL",
     "ACM",
-    "ACN",
     "AFRM",
     "AG1G",
+    "AMAT",
     "ANET",
     "APP",
     "ARMK",
@@ -310,13 +312,12 @@
     "DUOL",
     "EBAY",
     "EFX",
+    "ETN",
     "EXLS",
-    "G",
     "GDDY",
     "GEV",
     "HPE",
     "HQY",
-    "INFY",
     "IOT",
     "IRM",
     "LAMR",
@@ -346,6 +347,7 @@
     "W",
     "WSM",
     "XYZ",
-    "Z"
+    "Z",
+    "ZETA"
   ]
 }
