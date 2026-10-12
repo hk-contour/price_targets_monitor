@@ -2,8 +2,8 @@ name: Price Target Monitor
 
 on:
   schedule:
-    - cron: '0 14 * * 1-5'   # 10:00 AM ET (14:00 UTC) weekdays
-  workflow_dispatch:
+    - cron: '17 14 * * 1-5'  # ~10:17 AM EDT / 9:17 AM EST weekdays (UTC, no DST adjust)
+    workflow_dispatch:
 
 jobs:
   check:
