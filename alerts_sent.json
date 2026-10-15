@@ -268,7 +268,6 @@
     "Z"
   ],
   "2026-10-15": [
-    "3034",
     "AAPL",
     "ACM",
     "AG1G",
@@ -277,6 +276,7 @@
     "APP",
     "ARMK",
     "BKNG",
+    "BSY",
     "CHH",
     "CRM",
     "CTAS",
@@ -285,6 +285,7 @@
     "EBAY",
     "ETN",
     "EXLS",
+    "GEV",
     "GRMN",
     "HQY",
     "IOT",
@@ -304,6 +305,7 @@
     "RDDT",
     "RHI",
     "RKT",
+    "RRX",
     "SAPG",
     "SHOP",
     "SPHR",
@@ -314,7 +316,6 @@
     "VRSK",
     "WSM",
     "XYZ",
-    "Z",
-    "ZETA"
+    "Z"
   ]
 }
