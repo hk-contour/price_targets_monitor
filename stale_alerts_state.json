@@ -343,6 +343,14 @@
       "analyst": "MS",
       "date": "2026-08-07"
     },
+    "PAYC": {
+      "analyst": "SS",
+      "date": "2026-10-23"
+    },
+    "QLYS": {
+      "analyst": "MS",
+      "date": "2026-10-23"
+    },
     "RNG": {
       "analyst": "BT",
       "date": "2026-09-25"
