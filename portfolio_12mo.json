@@ -30,8 +30,7 @@
         "YSS (0d)"
       ],
       "non-equity / housekeeping row": [
-        "Dividends Orphaned (0d)",
-        "NOD (1599d)"
+        "Dividends Orphaned (0d)"
       ],
       "option / swap-basket / CFD wrapper": [
         "CFD_DAST (0d)",
@@ -192,6 +191,7 @@
     "NET",
     "NFLX",
     "NICE",
+    "NOD",
     "NOKIA",
     "NOW",
     "NTAP",

@@ -31,7 +31,6 @@ CURRENCY_CODES = {
 }
 # Explicit non-equity rows seen in this pull
 EXPLICIT_DROP = {
-    "NOD",                 # Nordea FX/rates line, dropped in the prior snapshot too
     "DIVIDENDS ORPHANED",  # housekeeping
 }
 

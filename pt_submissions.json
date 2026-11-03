@@ -1,0 +1,258 @@
+{
+  "_meta": {
+    "generated": "2026-11-03",
+    "source": "pricetargets@contourasset.com (every email is a target submission)",
+    "messages_read": 50,
+    "window": {
+      "from": "2026-08-20",
+      "to": "2026-11-03"
+    },
+    "rule": "latest submission per name; the alert uses max(CSV BeginDate, submission date) as the effective price-target date for BOTH the age rule and the earnings rule",
+    "key": "Bloomberg ticker, matching ticker_master.json",
+    "counts": {
+      "resolved": 45,
+      "unresolved": 3
+    }
+  },
+  "submissions": {
+    "2330 TT": {
+      "date": "2026-10-23",
+      "from": "mit.shah",
+      "subject": "TSMC (2330 TT) update"
+    },
+    "5802 JP": {
+      "date": "2026-09-30",
+      "from": "mit.shah",
+      "subject": "Sumitomo Electric (5802 JP) update"
+    },
+    "7751 JP": {
+      "date": "2026-10-27",
+      "from": "saaheb.sidana",
+      "subject": "7751 Update"
+    },
+    "AAPL US": {
+      "date": "2026-11-03",
+      "from": "mit.shah",
+      "subject": "Apple (AAPL) update"
+    },
+    "ACN US": {
+      "date": "2026-10-01",
+      "from": "bronson.kussin",
+      "subject": "Accenture (ACN US) - Updated Price Targets"
+    },
+    "ADSK US": {
+      "date": "2026-08-28",
+      "from": "brian.thackray",
+      "subject": "Autodesk (ADSK US) update"
+    },
+    "BWA US": {
+      "date": "2026-09-29",
+      "from": "jenny.chen",
+      "subject": "BorgWarner (BWA) Update"
+    },
+    "CNXC US": {
+      "date": "2026-09-30",
+      "from": "brian.thackray",
+      "subject": "Concentrix (CNXC US) update"
+    },
+    "CRM US": {
+      "date": "2026-08-27",
+      "from": "brian.thackray",
+      "subject": "Salesforce (CRM US) update"
+    },
+    "CTAS US": {
+      "date": "2026-09-24",
+      "from": "bronson.kussin",
+      "subject": "Cintas Corp (CTAS US) - Updated Price Targets"
+    },
+    "DASH US": {
+      "date": "2026-11-02",
+      "from": "james.collins",
+      "subject": "DoorDash (DASH US) 3Q26 Earnings"
+    },
+    "DOCN US": {
+      "date": "2026-11-03",
+      "from": "mit.shah",
+      "subject": "Digital Ocean (DOCN) update"
+    },
+    "EBAY US": {
+      "date": "2026-10-30",
+      "from": "james.collins",
+      "subject": "eBay (EBAY US) 3Q26 Earnings"
+    },
+    "EFX US": {
+      "date": "2026-10-22",
+      "from": "bronson.kussin",
+      "subject": "Equifax (EFX US) - Updated Price Targets"
+    },
+    "EXLS US": {
+      "date": "2026-10-28",
+      "from": "bronson.kussin",
+      "subject": "ExlService (EXLS US) - Updated Price Targets"
+    },
+    "FIX US": {
+      "date": "2026-10-22",
+      "from": "jenny.chen",
+      "subject": "Comfort Systems (FIX) update"
+    },
+    "FOXA US": {
+      "date": "2026-10-04",
+      "from": "saaheb.sidana",
+      "subject": "FOXA Update"
+    },
+    "GEV US": {
+      "date": "2026-10-28",
+      "from": "jenny.chen",
+      "subject": "GEV Update"
+    },
+    "GOOG US": {
+      "date": "2026-10-29",
+      "from": "saaheb.sidana",
+      "subject": "GOOG Update"
+    },
+    "GRMN US": {
+      "date": "2026-10-28",
+      "from": "saaheb.sidana",
+      "subject": "GRMN Update"
+    },
+    "HPE US": {
+      "date": "2026-09-02",
+      "from": "mit.shah",
+      "subject": "Hewlett Packard Enterprise (HPE) update"
+    },
+    "HQY US": {
+      "date": "2026-08-27",
+      "from": "bronson.kussin",
+      "subject": "HealthEquity (HQY US) - Updated Price Targets"
+    },
+    "INFY US": {
+      "date": "2026-10-30",
+      "from": "bronson.kussin",
+      "subject": "Infosys (INFY US) - Updated Price Targets"
+    },
+    "INTU US": {
+      "date": "2026-08-26",
+      "from": "saaheb.sidana",
+      "subject": "INTU Update"
+    },
+    "IOT US": {
+      "date": "2026-09-04",
+      "from": "brian.thackray",
+      "subject": "Samsara (IOT US) update"
+    },
+    "LOGI US": {
+      "date": "2026-10-28",
+      "from": "saaheb.sidana",
+      "subject": "LOGI Update"
+    },
+    "META US": {
+      "date": "2026-10-26",
+      "from": "saaheb.sidana",
+      "subject": "META update"
+    },
+    "NOD NO": {
+      "date": "2026-10-23",
+      "from": "mit.shah",
+      "subject": "Nordic Semi (NOD NO) update"
+    },
+    "NOW US": {
+      "date": "2026-10-28",
+      "from": "brian.thackray",
+      "subject": "Servicenow (NOW US) update"
+    },
+    "NVDA US": {
+      "date": "2026-08-27",
+      "from": "mit.shah",
+      "subject": "Nvidia (NVDA) update"
+    },
+    "P US": {
+      "date": "2026-08-27",
+      "from": "mit.shah",
+      "subject": "Everpure (P) update"
+    },
+    "PINS US": {
+      "date": "2026-10-29",
+      "from": "saaheb.sidana",
+      "subject": "PINS Update"
+    },
+    "PUB FP": {
+      "date": "2026-10-19",
+      "from": "bronson.kussin",
+      "subject": "Publicis (PUB FP) - Updated Price Targets"
+    },
+    "RDDT US": {
+      "date": "2026-10-30",
+      "from": "saaheb.sidana",
+      "subject": "RDDT Update"
+    },
+    "RHI US": {
+      "date": "2026-10-23",
+      "from": "bronson.kussin",
+      "subject": "Robert Half (RHI US) - Updated Price Targets"
+    },
+    "RNG US": {
+      "date": "2026-10-22",
+      "from": "brian.thackray",
+      "subject": "Ringcentral (RNG US) update"
+    },
+    "SAP GY": {
+      "date": "2026-10-21",
+      "from": "brian.thackray",
+      "subject": "SAP (SAP GY) update"
+    },
+    "STN CN": {
+      "date": "2026-09-29",
+      "from": "brian.thackray",
+      "subject": "Stantec (STN CN) update"
+    },
+    "TSLA US": {
+      "date": "2026-10-22",
+      "from": "saaheb.sidana",
+      "subject": "TSLA Update"
+    },
+    "TT US": {
+      "date": "2026-10-29",
+      "from": "jenny.chen",
+      "subject": "TT Update"
+    },
+    "TTAN US": {
+      "date": "2026-09-09",
+      "from": "brian.thackray",
+      "subject": "ServiceTitan (TTAN US) update"
+    },
+    "WDC US": {
+      "date": "2026-10-23",
+      "from": "mit.shah",
+      "subject": "Western Digital (WDC) update"
+    },
+    "WSM US": {
+      "date": "2026-08-26",
+      "from": "james.collins",
+      "subject": "Williams-Sonoma (WSM US) 2Q26 Earnings"
+    },
+    "ZBRA US": {
+      "date": "2026-11-03",
+      "from": "brian.thackray",
+      "subject": "Zebra Technologies (ZBRA US) update"
+    },
+    "ZM US": {
+      "date": "2026-10-21",
+      "from": "brian.thackray",
+      "subject": "Zoom Communications (ZM US) update"
+    }
+  },
+  "unresolved": [
+    {
+      "subject": "AUR Update",
+      "date": "2026-10-14"
+    },
+    {
+      "subject": "Solstice (SOLS) Update",
+      "date": "2026-09-29"
+    },
+    {
+      "subject": "Live Nation (LYV US) Update",
+      "date": "2026-08-24"
+    }
+  ]
+}

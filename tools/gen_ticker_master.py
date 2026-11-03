@@ -85,6 +85,7 @@ OVERRIDES = {
     "005930": ("005930 KS", "005930.KS", "Samsung Electronics"),
 
     # ── Renames ──────────────────────────────────────────────────────────────
+    "NOD":   ("NOD NO",    "NOD.OL",     "Nordic Semiconductor"),
     "SATS":  ("ECHO US",   "ECHO",       "EchoStar (was SATS)"),
 }
 
@@ -111,7 +112,7 @@ CORPORATE_ACTIONS = {
 
 # Rows that are not securities at all.
 JUNK_RE = re.compile(r"^(CFD_|EQSWAP_|MS[A-Z]{2,5}\d{2}[LS]$)")
-JUNK = {"NOD", "DIVIDENDS", "ARXS", "CBRS", "INIO", "MAIR", "QNT", "YSS", "SPCX", "CVSA"}
+JUNK = {"DIVIDENDS", "ARXS", "CBRS", "INIO", "MAIR", "QNT", "YSS", "SPCX", "CVSA"}
 CURRENCY = re.compile(r"^[A-Z]{3}(USD)?$")
 CCY = {"AUD","CAD","CHF","DKK","EUR","GBP","HKD","ILS","JPY","KRW","NOK","NZD","SEK","SGD","TWD","USD"}
 

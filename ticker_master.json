@@ -8,7 +8,7 @@
     "counts": {
       "assumed": 260,
       "corporate_action": 4,
-      "resolved": 40
+      "resolved": 41
     },
     "generated": "2026-11-03",
     "key": "Bloomberg ticker, space form (e.g. 'IFX GY')",
@@ -1561,6 +1561,15 @@
       "name": "NICE Ltd (ADR)",
       "status": "live",
       "yf": "NICE"
+    },
+    "NOD NO": {
+      "aliases": [
+        "NOD"
+      ],
+      "confidence": "resolved",
+      "name": "Nordic Semiconductor",
+      "status": "live",
+      "yf": "NOD.OL"
     },
     "NOK US": {
       "aliases": [

@@ -28,7 +28,7 @@ AS_OF = "2026-11-02"
 
 CCY = {"AUD","CAD","CHF","DKK","EUR","GBP","HKD","ILS","JPY","KRW",
        "NOK","NZD","SEK","SGD","TWD","USD"}
-JUNK = {"NOD", "DIVIDENDS"}
+JUNK = {"DIVIDENDS"}
 JUNK_RE = re.compile(r"^(CFD_|EQSWAP_|MS[A-Z]{2,5}\d{2}[LS]$)")
 
 

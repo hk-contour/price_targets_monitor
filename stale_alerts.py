@@ -82,6 +82,12 @@ CONFIG = {
     # Earnings alerts follow the coverage universe (analyst_map), not portfolio
     # membership: a covered name can report while the book holds none of it.
     "earnings_requires_portfolio": False,
+    # ...but a name the book has not held in 12 months only earns a nudge if its
+    # target was actually being maintained. A PT two years old on a name we do
+    # not own is dormant coverage, not a gap -- it belongs on a retirement list,
+    # not in an analyst's inbox. HOOD (PT 113d, no position) still fires; MSFT
+    # (PT 642d, no position) does not.
+    "earnings_coverage_only_max_pt_age_days": 180,
     "earnings_snapshot_max_age_days": 14,
 
     # ── Alert cadence ─────────────────────────────────────────────────────────
@@ -122,6 +128,7 @@ CONFIG = {
     "analyst_map_path":    "analyst_map.json",
     "ticker_master_path":  "ticker_master.json",    # BBG-keyed identifier + status map
     "earnings_dates_path": "earnings_dates.json",   # who has reported recently
+    "pt_submissions_path": "pt_submissions.json",   # inbox: when a target was last SUBMITTED
     "state_path":          "stale_alerts_state.json",
 
     # Warn in the summary email if the membership snapshot is older than this.
@@ -348,6 +355,60 @@ def load_analyst_map(path: str) -> dict:
         return {}
     with open(path) as f:
         return json.load(f)
+
+
+def load_pt_submissions(path: str) -> tuple[dict, dict]:
+    """
+    Loads pt_submissions.json -> ({bbg: {date, from, subject}}, meta).
+
+    The pricetargets inbox is the authoritative record of when an analyst last
+    SENT a target. Contour-Price-Targets.csv only records what the desk has
+    POSTED, and it lags -- worst right after a print, which is exactly when the
+    earnings trigger wants to nudge. Every email in that inbox is a submission,
+    so the alert treats max(CSV BeginDate, submission date) as the effective
+    price-target date.
+
+    Optional: missing file just means we fall back to the CSV alone.
+    """
+    if not os.path.exists(path):
+        log.warning(f"PT submissions not found: {path} — falling back to the CSV "
+                    f"alone, which WILL over-fire on names submitted but not yet "
+                    f"posted. Run tools/gen_pt_submissions.py.")
+        return {}, {}
+    with open(path) as f:
+        doc = json.load(f)
+    subs = doc.get("submissions", {})
+    meta = doc.get("_meta", {})
+    log.info(f"Loaded {len(subs)} price-target submissions from the inbox "
+             f"(generated {meta.get('generated', '?')}).")
+    return subs, meta
+
+
+def apply_submissions(targets: dict, submissions: dict) -> int:
+    """
+    Overlays inbox submission dates onto the CSV targets, in place.
+
+    Where the analyst submitted more recently than the sheet records, the
+    submission date becomes the effective PT date and age_days is recomputed.
+    The upside/downside levels stay as the CSV has them -- we know WHEN the
+    target was reset, not what to. That is enough: both rules key off the date.
+    """
+    today, applied = date.today(), 0
+    for ticker, info in targets.items():
+        entry = resolve_ticker(ticker)
+        rec = submissions.get(entry["bbg"]) if entry else None
+        if not rec:
+            continue
+        sub_date = date.fromisoformat(rec["date"])
+        if sub_date <= date.fromisoformat(info["date"]):
+            continue
+        info["date"] = sub_date.isoformat()
+        info["age_days"] = (today - sub_date).days
+        info["source"] = f"inbox submission from {rec.get('from', '?')}"
+        applied += 1
+    if applied:
+        log.info(f"Applied {applied} inbox submission dates over the CSV.")
+    return applied
 
 
 def load_earnings_dates(path: str) -> tuple[dict, dict]:
@@ -731,7 +792,8 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
                         corporate_actions: list, unmapped: list,
                         snapshot_warning: str, pf_meta: dict,
                         cur_meta: dict, unverifiable: list,
-                        pt_asof: date, pt_asof_src: str) -> str:
+                        pt_asof: date, pt_asof_src: str,
+                        dormant: list) -> str:
     """Audit-trail summary to hari: what was sent, what was excluded, what failed."""
     today_str = date.today().strftime("%B %d, %Y")
     td = "padding:6px 10px;font-size:13px;border-bottom:1px solid #f0f0f0"
@@ -871,6 +933,31 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
             uv_rows,
         )
 
+    # ── Dormant coverage: reported, but unheld and long abandoned ─────────────
+    dormant_html = ""
+    if dormant:
+        d_rows = "".join(
+            f"<tr>"
+            f"<td style='{td}'><b>{display_ticker(d['ticker'])}</b></td>"
+            f"<td style='{td}'>{ANALYST_NAMES.get(d['analyst'], d['analyst'])}</td>"
+            f"<td style='{td};color:#c0392b'>{d['age_days']}d</td>"
+            f"<td style='{td};color:#888'>{d['pt_date']}</td>"
+            f"<td style='{td};color:#888'>{d['report_date']}</td>"
+            f"</tr>"
+            for d in sorted(dormant, key=lambda x: -x["age_days"])
+        )
+        dormant_html = _mini_table(
+            f"Dormant coverage &mdash; reported, but NOT nudged ({len(dormant)})",
+            f"These reported recently with a target predating the print, but the book "
+            f"has not held them in 12 months and the target is already more than "
+            f"{CONFIG['earnings_coverage_only_max_pt_age_days']} days old. That reads as "
+            f"abandoned coverage rather than a gap worth emailing about. Retire them from "
+            f"analyst_map.json, or lower earnings_coverage_only_max_pt_age_days to nudge anyway.",
+            "#4b5563",
+            ["Ticker", "Analyst", ">PT Age", "PT date", "Reported"],
+            d_rows,
+        )
+
     # ── Corporate actions: covered but no longer tradeable ─────────────────────
     ca_html = ""
     if corporate_actions:
@@ -956,6 +1043,7 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
 {snap_banner}
 {alerts_table}
 {unver_html}
+{dormant_html}
 {gap_html}
 {err_html}
 {ca_html}
@@ -1040,7 +1128,13 @@ def run():
     held_now, cur_meta = load_portfolio_current(CONFIG["portfolio_current_path"])
     analyst_map        = load_analyst_map(CONFIG["analyst_map_path"])
     earnings, earn_meta = load_earnings_dates(CONFIG["earnings_dates_path"])
+    submissions, sub_meta = load_pt_submissions(CONFIG["pt_submissions_path"])
+    n_sub = apply_submissions(targets, submissions)
     pt_asof, pt_asof_src = pt_source_asof(CONFIG["csv_path"], targets)
+    # The inbox is current, so it -- not the CSV export -- bounds what we know.
+    if submissions and sub_meta.get("generated"):
+        pt_asof = max(pt_asof, date.fromisoformat(sub_meta["generated"]))
+        pt_asof_src = f"inbox read {sub_meta['generated']}; {n_sub} submissions applied"
     log.info(f"Price-target data as of {pt_asof} ({pt_asof_src}).")
     state              = load_state(CONFIG["state_path"])
 
@@ -1070,6 +1164,7 @@ def run():
     skipped_no_port   = []    # stale names dropped ONLY for not being in portfolio
     needs_analyst     = []    # IN portfolio + age-stale but no analyst assigned (gap to fill)
     corporate_actions = []    # covered names that are no longer tradeable
+    dormant           = []    # reported, but no position in 12m and PT long abandoned
     unverifiable      = []    # reported AFTER our PT export -- cannot tell if updated
     unmapped          = []    # covered names with no ticker_master entry
     skipped_acked     = []
@@ -1095,9 +1190,19 @@ def run():
                 })
             continue
         earnings_override = bool(earn_reason) and not CONFIG["earnings_requires_portfolio"]
+        in_portfolio = ticker in portfolio
+
+        # Dormant-coverage guard: reported, but the book has not held it in 12
+        # months AND the target was already long abandoned. Retire, don't nudge.
+        if (earn_reason and not in_portfolio
+                and info["age_days"] > CONFIG["earnings_coverage_only_max_pt_age_days"]):
+            if analyst_map.get(ticker):
+                dormant.append({"ticker": ticker, "analyst": analyst_map[ticker],
+                                "age_days": info["age_days"], "pt_date": info["date"],
+                                "report_date": report_date.isoformat()})
+            continue
 
         # ── Filter 1: Must have been in the MASTER portfolio in past 12 months ─
-        in_portfolio = ticker in portfolio
         if not in_portfolio and not earnings_override:
             # SAFEGUARD: surface names that an analyst actively covers (has an
             # assignment) yet aren't in the portfolio and are age-stale — these
@@ -1205,6 +1310,7 @@ def run():
              f"in_portfolio_needs_analyst={len(needs_analyst)} | "
              f"corporate_actions={len(corporate_actions)} | "
              f"unverifiable={len(unverifiable)} | "
+             f"dormant={len(dormant)} | "
              f"unmapped={len(unmapped)} | "
              f"acked={len(skipped_acked)} | "
              f"done={len(skipped_done)} | "
@@ -1257,7 +1363,7 @@ def run():
     summary_html = build_summary_email(
         analyst_alerts, skipped_no_port, needs_analyst,
         price_errors, corporate_actions, unmapped, snapshot_warning,
-        pf_meta, cur_meta, unverifiable, pt_asof, pt_asof_src
+        pf_meta, cur_meta, unverifiable, pt_asof, pt_asof_src, dormant
     )
     summary_subject = f"Stale PT Alert Summary - {today.strftime('%b %d')} - {total_alerts} alert(s)"
     send_email(summary_html, summary_subject, CONFIG["test_email"])

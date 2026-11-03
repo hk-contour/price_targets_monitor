@@ -140,3 +140,30 @@ top of the script, then run it. A zero exposure counts as NOT held.
 ```bash
 python3 tools/gen_portfolio_current.py
 ```
+
+## gen_pt_submissions.py
+
+Builds `pt_submissions.json` — when each name's target was last **submitted**
+by its analyst, read from `pricetargets@contourasset.com`.
+
+`Contour-Price-Targets.csv` records what the desk has **posted**; the inbox
+records what the analyst has **sent**. The sheet lags, and the gap is worst
+right after a print — exactly when the earnings trigger wants to nudge. Per
+Hari, every email in that inbox is a target submission, so the alert uses:
+
+    effective PT date = max(CSV BeginDate, inbox submission date)
+
+for **both** the age rule and the earnings rule.
+
+Pull the shared mailbox (Outlook connector, newest first, paged back past
+`earnings_lookback_days` with room to spare) and save as
+`tools/inbox/pt_inbox_<date>.json` — `[{"d": date, "s": subject, "f": sender}]`.
+
+```bash
+python3 tools/gen_pt_submissions.py
+```
+
+Subjects come in two shapes, both handled: `ExlService (EXLS US) - Updated
+Price Targets` and `RDDT Update`. Anything that cannot be resolved against
+`ticker_master.json` is printed — never dropped silently, since an unparsed
+subject is a name we might wrongly nudge.
