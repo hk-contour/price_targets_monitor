@@ -371,7 +371,37 @@ def load_earnings_dates(path: str) -> tuple[dict, dict]:
     return reported, meta
 
 
-def earnings_reason(ticker: str, info: dict, reported: dict, today: date):
+def pt_source_asof(csv_path: str, targets: dict) -> tuple[date, str]:
+    """
+    When the price-target data we are holding was last exported.
+
+    This matters because the earnings trigger asks "did the analyst update the
+    target after the print?" -- a question the data can only answer if it was
+    exported AFTER the print. Contour-Price-Targets.csv is a manual export, so
+    it is routinely older than last week's earnings.
+
+    Prefers the CSV's git commit date (accurate). Falls back to the newest
+    BeginDate in the file, which is a lower bound on the export date -- it can
+    only make us more cautious, never less.
+    """
+    try:
+        import subprocess
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%cs", "--", csv_path],
+            capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+        if out:
+            return date.fromisoformat(out), "git commit date"
+    except Exception as e:
+        log.warning(f"Could not read CSV commit date ({e}); falling back to newest target.")
+
+    newest = max((date.fromisoformat(v["date"]) for v in targets.values()),
+                 default=date(1970, 1, 1))
+    return newest, "newest BeginDate in file (lower bound)"
+
+
+def earnings_reason(ticker: str, info: dict, reported: dict, today: date,
+                    pt_asof: date = None):
     """
     Returns (reason, report_date) when a name has reported since its price
     target was set, or (None, None).
@@ -402,6 +432,14 @@ def earnings_reason(ticker: str, info: dict, reported: dict, today: date):
     pt_date = date.fromisoformat(info["date"])
     if pt_date >= report_date:
         return None, None       # target already refreshed since the print
+
+    # HARD GUARD. If our price-target export is not newer than the print, we
+    # genuinely cannot tell whether the analyst has already sent an update --
+    # a post-print submission could not possibly be in the file yet. Nudging
+    # here is how you email someone about work they already did, which is the
+    # one failure this alert must never commit. Report it instead.
+    if pt_asof is not None and pt_asof <= report_date:
+        return "UNVERIFIABLE", report_date
 
     return (f"Reported {report_date:%b %d} ({days_since}d ago) — price target "
             f"dates from {pt_date:%b %d, %Y} and has not been updated since",
@@ -692,7 +730,8 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
                         needs_analyst: list, price_errors: list,
                         corporate_actions: list, unmapped: list,
                         snapshot_warning: str, pf_meta: dict,
-                        cur_meta: dict) -> str:
+                        cur_meta: dict, unverifiable: list,
+                        pt_asof: date, pt_asof_src: str) -> str:
     """Audit-trail summary to hari: what was sent, what was excluded, what failed."""
     today_str = date.today().strftime("%B %d, %Y")
     td = "padding:6px 10px;font-size:13px;border-bottom:1px solid #f0f0f0"
@@ -809,6 +848,29 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
             f"</tr></thead><tbody>{gap_rows}</tbody></table>"
         )
 
+    # ── Reported after our export: cannot verify, deliberately not nudged ──────
+    unver_html = ""
+    if unverifiable:
+        uv_rows = "".join(
+            f"<tr>"
+            f"<td style='{td}'><b>{display_ticker(u['ticker'])}</b></td>"
+            f"<td style='{td}'>{ANALYST_NAMES.get(u['analyst'], u['analyst'])}</td>"
+            f"<td style='{td};color:#888'>{u['report_date']}</td>"
+            f"<td style='{td};color:#888'>{u['pt_date']}</td>"
+            f"</tr>"
+            for u in sorted(unverifiable, key=lambda x: x["report_date"], reverse=True)
+        )
+        unver_html = _mini_table(
+            f"Reported after our price-target export &mdash; NOT nudged ({len(unverifiable)})",
+            f"These companies reported on or after {pt_asof}, the date our price-target "
+            f"data was exported. An update sent since the print could not be in that file "
+            f"yet, so we cannot tell whether the analyst has already submitted one. "
+            f"Re-export Contour-Price-Targets.csv and these resolve themselves.",
+            "#b45309",
+            ["Ticker", "Analyst", "Reported", "PT date on file"],
+            uv_rows,
+        )
+
     # ── Corporate actions: covered but no longer tradeable ─────────────────────
     ca_html = ""
     if corporate_actions:
@@ -889,9 +951,11 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
   {total} stale alert(s) across {len(all_analyst_alerts)} analyst(s).
   {'In test mode — all analyst emails routed to <b>' + CONFIG['test_email'] + '</b>.' if CONFIG['test_mode'] else ''}
   Portfolio membership: 12-month master snapshot generated {pf_meta.get('generated', '?')}.
+  Price-target data as of <b>{pt_asof}</b> ({pt_asof_src}).
 </p>
 {snap_banner}
 {alerts_table}
+{unver_html}
 {gap_html}
 {err_html}
 {ca_html}
@@ -976,6 +1040,8 @@ def run():
     held_now, cur_meta = load_portfolio_current(CONFIG["portfolio_current_path"])
     analyst_map        = load_analyst_map(CONFIG["analyst_map_path"])
     earnings, earn_meta = load_earnings_dates(CONFIG["earnings_dates_path"])
+    pt_asof, pt_asof_src = pt_source_asof(CONFIG["csv_path"], targets)
+    log.info(f"Price-target data as of {pt_asof} ({pt_asof_src}).")
     state              = load_state(CONFIG["state_path"])
 
     today = date.today()
@@ -1004,6 +1070,7 @@ def run():
     skipped_no_port   = []    # stale names dropped ONLY for not being in portfolio
     needs_analyst     = []    # IN portfolio + age-stale but no analyst assigned (gap to fill)
     corporate_actions = []    # covered names that are no longer tradeable
+    unverifiable      = []    # reported AFTER our PT export -- cannot tell if updated
     unmapped          = []    # covered names with no ticker_master entry
     skipped_acked     = []
     skipped_done      = []
@@ -1019,7 +1086,14 @@ def run():
         # not portfolio membership, because a covered name can report while the
         # book holds none of it (HOOD is the standing example). When it fires it
         # overrides the portfolio filter below.
-        earn_reason, report_date = earnings_reason(ticker, info, earnings, today)
+        earn_reason, report_date = earnings_reason(ticker, info, earnings, today, pt_asof)
+        if earn_reason == "UNVERIFIABLE":
+            if analyst_map.get(ticker):
+                unverifiable.append({
+                    "ticker": ticker, "analyst": analyst_map[ticker],
+                    "report_date": report_date.isoformat(), "pt_date": info["date"],
+                })
+            continue
         earnings_override = bool(earn_reason) and not CONFIG["earnings_requires_portfolio"]
 
         # ── Filter 1: Must have been in the MASTER portfolio in past 12 months ─
@@ -1130,6 +1204,7 @@ def run():
              f"excluded_not_in_portfolio={len(skipped_no_port)} | "
              f"in_portfolio_needs_analyst={len(needs_analyst)} | "
              f"corporate_actions={len(corporate_actions)} | "
+             f"unverifiable={len(unverifiable)} | "
              f"unmapped={len(unmapped)} | "
              f"acked={len(skipped_acked)} | "
              f"done={len(skipped_done)} | "
@@ -1182,7 +1257,7 @@ def run():
     summary_html = build_summary_email(
         analyst_alerts, skipped_no_port, needs_analyst,
         price_errors, corporate_actions, unmapped, snapshot_warning,
-        pf_meta, cur_meta
+        pf_meta, cur_meta, unverifiable, pt_asof, pt_asof_src
     )
     summary_subject = f"Stale PT Alert Summary - {today.strftime('%b %d')} - {total_alerts} alert(s)"
     send_email(summary_html, summary_subject, CONFIG["test_email"])
