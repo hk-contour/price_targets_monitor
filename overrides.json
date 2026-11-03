@@ -1,0 +1,41 @@
+{
+  "_meta": {
+    "purpose": "Hand-owned per-name decisions. The ONLY file in this repo that is never written by anything in tools/ -- edit it directly. Applied LAST, after every derived feed, so it always wins.",
+    "key": "Bloomberg ticker, space form, matching ticker_master.json (e.g. 'SOFI US', 'IFX GY')",
+    "fields": {
+      "analyst": "Reassign coverage. Beats analyst_map.json and the Lightkeeper tag.",
+      "action": "One of: mute | retire | force",
+      "mute": "Never nudge, but keep the name in coverage and keep showing it in the summary. Use for 'stop bothering them about this for now'.",
+      "retire": "Drop from coverage entirely -- no nudge, no gap report. Use when the firm has stopped following the name.",
+      "force": "Nudge even when a guard would suppress (dormant coverage, unverifiable export). Use to override the script's judgement on one name.",
+      "until": "ISO date. The action lifts automatically on that date. Strongly preferred over an open-ended mute.",
+      "pt_date": "Assert the effective price-target date when both the CSV and the inbox have it wrong.",
+      "status": "Assert ticker status (live | acquired | private | renamed) without editing tools/gen_ticker_master.py.",
+      "reason": "REQUIRED. In four months an entry with no reason is indistinguishable from a mistake.",
+      "by": "Who made the call.",
+      "date": "When the call was made. Used to flag entries for review."
+    },
+    "rules": [
+      "Every entry needs a reason. The script warns on any that lack one.",
+      "Entries with an 'until' lift themselves on that date and are reported when they do.",
+      "Entries with no 'until' are flagged for review after override_review_days (90).",
+      "Every active override is listed in the weekly summary email. A mute nobody remembers is how something real goes missing."
+    ],
+    "examples": {
+      "mute for a quarter": {"action": "mute", "until": "2027-02-01", "reason": "deciding whether to retire coverage", "by": "hari", "date": "2026-11-03"},
+      "reassign": {"analyst": "JC", "reason": "LK only carries the PM tag", "by": "hari", "date": "2026-11-03"},
+      "retire": {"action": "retire", "reason": "firm no longer follows the name", "by": "hari", "date": "2026-11-03"},
+      "assert a date": {"pt_date": "2026-10-21", "reason": "submitted but not yet posted or emailed", "by": "hari", "date": "2026-11-03"},
+      "force through a guard": {"action": "force", "reason": "want this one despite no position", "by": "hari", "date": "2026-11-03"}
+    }
+  },
+
+  "overrides": {
+    "SOFI US": {
+      "analyst": "JC",
+      "reason": "James's name. Lightkeeper only carries the PM (DM) tag, so the generated map leaves it unowned.",
+      "by": "hari",
+      "date": "2026-11-03"
+    }
+  }
+}

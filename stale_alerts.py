@@ -129,7 +129,11 @@ CONFIG = {
     "ticker_master_path":  "ticker_master.json",    # BBG-keyed identifier + status map
     "earnings_dates_path": "earnings_dates.json",   # who has reported recently
     "pt_submissions_path": "pt_submissions.json",   # inbox: when a target was last SUBMITTED
+    "overrides_path":      "overrides.json",        # hand-owned per-name decisions (never generated)
     "state_path":          "stale_alerts_state.json",
+
+    # Flag open-ended overrides for review once they are this old.
+    "override_review_days": 90,
 
     # Warn in the summary email if the membership snapshot is older than this.
     "portfolio_snapshot_max_age_days": 45,
@@ -355,6 +359,73 @@ def load_analyst_map(path: str) -> dict:
         return {}
     with open(path) as f:
         return json.load(f)
+
+
+OVERRIDES: dict = {}          # normalized alias -> entry
+OVERRIDE_NOTES: dict = {"expired": [], "no_reason": [], "unknown": [], "review": []}
+
+
+def load_overrides(path: str) -> dict:
+    """
+    Loads overrides.json -- the one hand-owned file. Nothing in tools/ writes
+    it, and it is applied after every derived feed, so it always wins.
+
+    Expired entries (past their `until`) lift themselves here and are reported.
+    Entries that are open-ended, missing a reason, or point at a ticker we do
+    not know are collected for the summary rather than failing the run: a bad
+    override should be visible, not fatal.
+    """
+    global OVERRIDES, OVERRIDE_NOTES
+    OVERRIDES = {}
+    OVERRIDE_NOTES = {"expired": [], "no_reason": [], "unknown": [], "review": []}
+    if not os.path.exists(path):
+        log.info(f"No overrides file at {path} — none applied.")
+        return {}
+
+    with open(path) as f:
+        doc = json.load(f)
+    today = date.today()
+    active = {}
+
+    for bbg, entry in doc.get("overrides", {}).items():
+        entry = {**entry, "bbg": bbg}
+
+        until = entry.get("until")
+        if until and date.fromisoformat(until) <= today:
+            OVERRIDE_NOTES["expired"].append(entry)
+            log.info(f"  override on {bbg} expired {until} — lifted")
+            continue
+
+        if not entry.get("reason"):
+            OVERRIDE_NOTES["no_reason"].append(entry)
+        if not until and entry.get("date"):
+            age = (today - date.fromisoformat(entry["date"])).days
+            if age > CONFIG["override_review_days"]:
+                entry["age_days"] = age
+                OVERRIDE_NOTES["review"].append(entry)
+
+        master = TICKER_BY_BBG.get(bbg)
+        if master is None:
+            OVERRIDE_NOTES["unknown"].append(entry)
+            aliases = [normalize_ticker(bbg.split()[0])]
+        else:
+            aliases = [normalize_ticker(a) for a in master.get("aliases", [])]
+
+        for alias in aliases:
+            OVERRIDES[alias] = entry
+        active[bbg] = entry
+
+    if active:
+        log.info(f"Loaded {len(active)} active override(s) from {path}.")
+    for kind, items in OVERRIDE_NOTES.items():
+        if items:
+            log.warning(f"  overrides {kind}: {[e['bbg'] for e in items]}")
+    return active
+
+
+def override_for(ticker: str) -> dict:
+    """The active override for a ticker, or an empty dict."""
+    return OVERRIDES.get(normalize_ticker(ticker), {})
 
 
 def load_pt_submissions(path: str) -> tuple[dict, dict]:
@@ -793,7 +864,8 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
                         snapshot_warning: str, pf_meta: dict,
                         cur_meta: dict, unverifiable: list,
                         pt_asof: date, pt_asof_src: str,
-                        dormant: list) -> str:
+                        dormant: list, muted: list,
+                        active_overrides: dict) -> str:
     """Audit-trail summary to hari: what was sent, what was excluded, what failed."""
     today_str = date.today().strftime("%B %d, %Y")
     td = "padding:6px 10px;font-size:13px;border-bottom:1px solid #f0f0f0"
@@ -933,6 +1005,71 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
             uv_rows,
         )
 
+    # ── Active hand overrides ─────────────────────────────────────────────────
+    # Always rendered when any override is live. A mute nobody remembers is how
+    # something real goes missing, so overrides stay in front of Hari every week.
+    ov_html = ""
+    if active_overrides or any(OVERRIDE_NOTES.values()):
+        rows = "".join(
+            f"<tr>"
+            f"<td style='{td}'><b>{bbg}</b></td>"
+            f"<td style='{td}'>"
+            f"{e.get('action') or ('analyst &rarr; ' + e['analyst'] if e.get('analyst') else '')}"
+            f"{' / pt_date ' + e['pt_date'] if e.get('pt_date') else ''}"
+            f"{' / status ' + e['status'] if e.get('status') else ''}</td>"
+            f"<td style='{td};color:#888'>{e.get('until') or '&mdash;'}</td>"
+            f"<td style='{td};color:#555;font-size:12px'>{e.get('reason', '')}</td>"
+            f"<td style='{td};color:#888;font-size:12px'>{e.get('by', '')} {e.get('date', '')}</td>"
+            f"</tr>"
+            for bbg, e in sorted(active_overrides.items())
+        )
+        notes = []
+        if OVERRIDE_NOTES["expired"]:
+            notes.append("Lifted this run (past their until date): "
+                         + ", ".join(e["bbg"] for e in OVERRIDE_NOTES["expired"]))
+        if OVERRIDE_NOTES["review"]:
+            notes.append("Open-ended and more than "
+                         f"{CONFIG['override_review_days']}d old, please review: "
+                         + ", ".join(f"{e['bbg']} ({e['age_days']}d)"
+                                     for e in OVERRIDE_NOTES["review"]))
+        if OVERRIDE_NOTES["no_reason"]:
+            notes.append("No reason recorded: "
+                         + ", ".join(e["bbg"] for e in OVERRIDE_NOTES["no_reason"]))
+        if OVERRIDE_NOTES["unknown"]:
+            notes.append("Ticker not in ticker_master.json: "
+                         + ", ".join(e["bbg"] for e in OVERRIDE_NOTES["unknown"]))
+        note_html = ("<p style='font-family:Arial,sans-serif;font-size:12px;color:#9a3412;"
+                     "margin:6px 0'>" + "<br>".join(notes) + "</p>") if notes else ""
+        ov_html = _mini_table(
+            f"Hand overrides in force ({len(active_overrides)})",
+            "Edited by hand in overrides.json and applied after every derived feed. "
+            "Listed every week so nothing stays suppressed by accident.",
+            "#334155",
+            ["Ticker", "Override", "Until", "Reason", "Set by"],
+            rows,
+        ) + note_html
+
+    # ── Muted by override: would have nudged, suppressed by hand ──────────────
+    muted_html = ""
+    if muted:
+        m_rows = "".join(
+            f"<tr>"
+            f"<td style='{td}'><b>{display_ticker(m['ticker'])}</b></td>"
+            f"<td style='{td}'>{ANALYST_NAMES.get(m['analyst'], m['analyst'])}</td>"
+            f"<td style='{td};color:#888'>{m['until'] or 'no end date'}</td>"
+            f"<td style='{td};color:#555;font-size:12px'>{'; '.join(m['reasons'])}</td>"
+            f"</tr>"
+            for m in sorted(muted, key=lambda x: x["ticker"])
+        )
+        muted_html = _mini_table(
+            f"Muted by override &mdash; would have nudged ({len(muted)})",
+            "These met a trigger and were suppressed by hand. Shown so a mute cannot "
+            "quietly hide a real problem.",
+            "#7c3aed",
+            ["Ticker", "Analyst", "Mute ends", "Would have said"],
+            m_rows,
+        )
+
     # ── Dormant coverage: reported, but unheld and long abandoned ─────────────
     dormant_html = ""
     if dormant:
@@ -1043,10 +1180,12 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
 {snap_banner}
 {alerts_table}
 {unver_html}
+{muted_html}
 {dormant_html}
 {gap_html}
 {err_html}
 {ca_html}
+{ov_html}
 {unmapped_html}
 {excl_html}
 <p style="font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:16px">
@@ -1128,8 +1267,16 @@ def run():
     held_now, cur_meta = load_portfolio_current(CONFIG["portfolio_current_path"])
     analyst_map        = load_analyst_map(CONFIG["analyst_map_path"])
     earnings, earn_meta = load_earnings_dates(CONFIG["earnings_dates_path"])
+    active_overrides = load_overrides(CONFIG["overrides_path"])
     submissions, sub_meta = load_pt_submissions(CONFIG["pt_submissions_path"])
     n_sub = apply_submissions(targets, submissions)
+    for ticker, info in targets.items():
+        forced = override_for(ticker).get("pt_date")
+        if forced and forced > info["date"]:
+            info["date"] = forced
+            info["age_days"] = (date.today() - date.fromisoformat(forced)).days
+            info["source"] = "override"
+
     pt_asof, pt_asof_src = pt_source_asof(CONFIG["csv_path"], targets)
     # The inbox is current, so it -- not the CSV export -- bounds what we know.
     if submissions and sub_meta.get("generated"):
@@ -1165,6 +1312,7 @@ def run():
     needs_analyst     = []    # IN portfolio + age-stale but no analyst assigned (gap to fill)
     corporate_actions = []    # covered names that are no longer tradeable
     dormant           = []    # reported, but no position in 12m and PT long abandoned
+    muted             = []    # suppressed by a hand override
     unverifiable      = []    # reported AFTER our PT export -- cannot tell if updated
     unmapped          = []    # covered names with no ticker_master entry
     skipped_acked     = []
@@ -1177,12 +1325,21 @@ def run():
     for ticker, info in sorted(targets.items()):
         age_stale = info["age_days"] >= CONFIG["stale_age_days"]
 
+        # ── Hand overrides win over every derived feed ────────────────────────
+        ov = override_for(ticker)
+        if ov.get("action") == "retire":
+            continue                       # out of coverage: no nudge, no gap report
+        forced_through = ov.get("action") == "force"
+
         # Earnings trigger is evaluated first: it follows the COVERAGE universe,
         # not portfolio membership, because a covered name can report while the
         # book holds none of it (HOOD is the standing example). When it fires it
         # overrides the portfolio filter below.
         earn_reason, report_date = earnings_reason(ticker, info, earnings, today, pt_asof)
-        if earn_reason == "UNVERIFIABLE":
+        if earn_reason == "UNVERIFIABLE" and forced_through:
+            earn_reason = (f"Reported {report_date:%b %d} — forced through by override "
+                           f"({ov.get('reason', 'no reason given')})")
+        elif earn_reason == "UNVERIFIABLE":
             if analyst_map.get(ticker):
                 unverifiable.append({
                     "ticker": ticker, "analyst": analyst_map[ticker],
@@ -1194,7 +1351,7 @@ def run():
 
         # Dormant-coverage guard: reported, but the book has not held it in 12
         # months AND the target was already long abandoned. Retire, don't nudge.
-        if (earn_reason and not in_portfolio
+        if (earn_reason and not in_portfolio and not forced_through
                 and info["age_days"] > CONFIG["earnings_coverage_only_max_pt_age_days"]):
             if analyst_map.get(ticker):
                 dormant.append({"ticker": ticker, "analyst": analyst_map[ticker],
@@ -1218,7 +1375,7 @@ def run():
             continue
 
         # ── Filter 2: Must have an assigned analyst ───────────────────────────
-        analyst_code = analyst_map.get(ticker)
+        analyst_code = ov.get("analyst") or analyst_map.get(ticker)
         if not analyst_code:
             # SAFEGUARD: in-portfolio + stale but unassigned → surface, don't drop.
             if age_stale:
@@ -1233,7 +1390,7 @@ def run():
         # A delisted name cannot be priced, so it would otherwise reappear as a
         # price-fetch failure every week and bury the real mapping bugs. Report
         # it once, in its own section, so coverage can actually be cleaned up.
-        status = ticker_status(ticker)
+        status = ov.get("status") or ticker_status(ticker)
         if status == "unmapped":
             unmapped.append({"ticker": ticker, "analyst": analyst_code,
                              "age_days": info["age_days"]})
@@ -1266,6 +1423,13 @@ def run():
             reasons = [earn_reason] + reasons
         if not reasons:
             continue   # Neither rule fired
+
+        if ov.get("action") == "mute":
+            muted.append({"ticker": ticker, "analyst": analyst_code,
+                          "reason": ov.get("reason", ""), "until": ov.get("until", ""),
+                          "reasons": reasons})
+            log.info(f"  {ticker}: muted by override — not nudged")
+            continue
 
         # ── Check alert state ─────────────────────────────────────────────────
         status = alert_status(ticker, state, info, report_date)
@@ -1311,6 +1475,7 @@ def run():
              f"corporate_actions={len(corporate_actions)} | "
              f"unverifiable={len(unverifiable)} | "
              f"dormant={len(dormant)} | "
+             f"muted={len(muted)} | "
              f"unmapped={len(unmapped)} | "
              f"acked={len(skipped_acked)} | "
              f"done={len(skipped_done)} | "
@@ -1363,7 +1528,8 @@ def run():
     summary_html = build_summary_email(
         analyst_alerts, skipped_no_port, needs_analyst,
         price_errors, corporate_actions, unmapped, snapshot_warning,
-        pf_meta, cur_meta, unverifiable, pt_asof, pt_asof_src, dormant
+        pf_meta, cur_meta, unverifiable, pt_asof, pt_asof_src, dormant,
+        muted, active_overrides
     )
     summary_subject = f"Stale PT Alert Summary - {today.strftime('%b %d')} - {total_alerts} alert(s)"
     send_email(summary_html, summary_subject, CONFIG["test_email"])

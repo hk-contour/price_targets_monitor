@@ -167,3 +167,16 @@ Subjects come in two shapes, both handled: `ExlService (EXLS US) - Updated
 Price Targets` and `RDDT Update`. Anything that cannot be resolved against
 `ticker_master.json` is printed — never dropped silently, since an unparsed
 subject is a name we might wrongly nudge.
+
+---
+
+## A note on overrides.json
+
+`overrides.json` is the **only** data file in this repo that nothing in `tools/`
+writes. Everything else here is regenerated, so hand-edits to
+`ticker_master.json`, `portfolio_12mo.json`, `portfolio_current.json`,
+`analyst_map.json`, `earnings_dates.json` or `pt_submissions.json` will be
+silently lost the next time a generator runs.
+
+Per-name decisions belong in `overrides.json`. It is applied last, so it wins
+over every derived feed, and its own `_meta` block documents the schema.
