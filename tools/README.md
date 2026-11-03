@@ -63,3 +63,58 @@ So the merge is deliberately conservative:
 
 Replacing the file wholesale with the Lightkeeper tag would be wrong: it would
 reassign SHOP from JC to the PM bucket and leave SOFI and SPOT unowned.
+
+## gen_ticker_master.py
+
+Builds `ticker_master.json`, the BBG-keyed identifier map. Seeded from the
+Lightkeeper pulls, then overlaid with curated `OVERRIDES` (foreign listings),
+`CORPORATE_ACTIONS` (delisted / acquired / taken private) and `RENAMED_ONTO`
+(old code folded in as an alias on the surviving entry).
+
+Entries are marked `resolved` (curated) or `assumed` (inferred as a plain US
+listing). Validate the assumed ones with `check_tickers.py`.
+
+```bash
+python3 tools/gen_ticker_master.py
+```
+
+## check_tickers.py
+
+On-demand liveness scan — **not** part of the weekly job. Price-checks the map
+and reports DARK (no price) and STALE (last trade too old) entries, which are
+usually unrecorded corporate actions. Fix them in `gen_ticker_master.py`, then
+regenerate.
+
+```bash
+python3 tools/check_tickers.py            # analyst-covered names only
+python3 tools/check_tickers.py --all
+```
+
+## gen_earnings_dates.py
+
+Builds `earnings_dates.json` — who has reported recently — from the TMT
+Earnings Calendar workbooks in Dropbox:
+
+    /Hari Kumar/06. Research/Earnings Calendar/TMT Earnings Calendar_<date>.xlsx
+
+**The calendar is forward-looking**: one row per ticker carrying its NEXT
+earnings date. When a company reports, the following snapshot rolls that row
+forward a quarter — so no single file can tell you who just reported. The
+generator reads several weekly snapshots and takes, per ticker, the latest
+date that is already in the past. The 10/23 snapshot has SPOT at 10/22
+Confirmed; the 10/30 snapshot has already moved it to 2/10/2027.
+
+So: **keep the last 6–8 weekly workbooks in the input folder.** Dropping older
+ones loses the prints they alone recorded. Skip the "DAILY VIEW" files — those
+are a derived pivot, not the table.
+
+Only `Confirmed` and `Tentative` rows are used. Bloomberg `Estimate` dates are
+routinely off by days and must never trigger an analyst email.
+
+```bash
+# download the workbooks from Dropbox into a folder first
+python3 tools/gen_earnings_dates.py ~/Downloads/earnings_cal
+```
+
+`stale_alerts.py` warns in the summary email once this file is more than
+`earnings_snapshot_max_age_days` (14) old.

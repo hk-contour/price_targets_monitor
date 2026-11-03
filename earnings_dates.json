@@ -1,0 +1,1887 @@
+{
+  "_meta": {
+    "generated": "2026-11-03",
+    "source": "Dropbox /Hari Kumar/06. Research/Earnings Calendar",
+    "snapshots": [
+      "cal_10_23.xlsx",
+      "cal_10_30.xlsx",
+      "cal_11_02.xlsx"
+    ],
+    "rule": "latest earnings date on or before the generated date, across all snapshots; only Confirmed/Tentative rows -- Bloomberg Estimate dates are excluded so an analyst is never nudged on a guess",
+    "key": "Bloomberg ticker, matching ticker_master.json",
+    "counts": {
+      "reported": 105,
+      "unmatched": 309
+    }
+  },
+  "reported": {
+    "000660 KS": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "005930 KS": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "5802 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "6752 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "6857 JP": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "6981 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "7751 JP": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "AAPL US": {
+      "date": "2026-11-02",
+      "status": "Tentative",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ADP US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "ALAB US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "AMD US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "AMZN US": {
+      "date": "2026-10-29",
+      "status": "Tentative",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ANET US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "BAH US": {
+      "date": "2026-10-23",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "BFAM US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "BFH US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "BKNG US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "BWA US": {
+      "date": "2026-10-29",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CBOE US": {
+      "date": "2026-10-30",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CHH US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CHKP US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CMCSA US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "COIN US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "CROX US": {
+      "date": "2026-10-29",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CSGP US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "CTSH US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CVLT US": {
+      "date": "2026-10-27",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "CVNA US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "DOCN US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "DOX US": {
+      "date": "2026-11-03",
+      "status": "Tentative",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "DSY FP": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_23.xlsx"
+    },
+    "DT US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "DUOL US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "EBAY US": {
+      "date": "2026-10-28",
+      "status": "Tentative",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ENPH US": {
+      "date": "2026-10-27",
+      "status": "Tentative",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ETN US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "ETSY US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "EXLS US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "F US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "FFIV US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "FISV US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "FIX US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post (call next day)",
+      "source": "cal_10_23.xlsx"
+    },
+    "FOXA US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "GDDY US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "GEN US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "GEV US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "GLW US": {
+      "date": "2026-10-27",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "GOOG US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "GRMN US": {
+      "date": "2026-10-28",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "HLT US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "HOOD US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "INFY US": {
+      "date": "2026-10-23",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "INTA US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "INTC US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "IT US": {
+      "date": "2026-11-03",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "LAUR US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "LBTYA US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "LBTYK US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "LOGI US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "LSCC US": {
+      "date": "2026-11-02",
+      "status": "Tentative",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "MANH US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "MPWR US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "MSFT US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "MTCH US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "NOK US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "NOW US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "NXPI US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "OMC US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ON US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "PCOR US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "PINS US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "PLTR US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "PYPL US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "RACE US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "RBLX US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "RCI/B CN": {
+      "date": "2026-10-23",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "RDDT US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "RHI US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "RNG US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ROP US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "RRX US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "SHOP US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "SLM US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "SNDK US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "SOFI US": {
+      "date": "2026-10-27",
+      "status": "Tentative",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "SPOT US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "STM US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "STX US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "TENB US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "TER US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "TMUS US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "TNET US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "TOST US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "TT US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "TWLO US": {
+      "date": "2026-10-29",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "TYL US": {
+      "date": "2026-10-28",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "UPS US": {
+      "date": "2026-10-27",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "UPST US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "UPWK US": {
+      "date": "2026-11-02",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "VRNS US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "",
+      "source": "cal_10_30.xlsx"
+    },
+    "VRSN US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "VZ US": {
+      "date": "2026-10-26",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    },
+    "WDC US": {
+      "date": "2026-10-22",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "XYZ US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Post",
+      "source": "cal_10_23.xlsx"
+    },
+    "ZBRA US": {
+      "date": "2026-11-03",
+      "status": "Confirmed",
+      "session": "Pre",
+      "source": "cal_10_23.xlsx"
+    }
+  },
+  "unmatched": {
+    "006400 KS": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "034220 KS": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "066570 KS": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "1833 HK": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "2121 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "2303 TT": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "2327 JP": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "2327 TT": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "2382 TT": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "2409 TT": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "2454 TT": {
+      "date": "2026-10-30",
+      "status": "Tentative"
+    },
+    "2489 JP": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "285A JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "3189 TT": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "3635 JP": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "373220 KP": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "4062 JP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "4661 JP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "4684 JP": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "5214 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "5334 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "6501 JP": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "6503 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "6561 TT": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "6592 JP": {
+      "date": "2026-11-01",
+      "status": "Confirmed"
+    },
+    "6701 JP": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "6702 JP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "6723 JP": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "6762 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "6770 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "6861 JP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "688825 CH": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "6920 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "6923 JP": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "6954 JP": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "6971 JP": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "6988 JP": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "7276 JP": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "728 HK": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "7309 JP": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "762 HK": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "763 HK": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "7844 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "8035 JP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "9432 JP": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "9697 JP": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "9744 JP": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "9766 JP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "A3M SM": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "ABG": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "ACCON SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "ADT": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "ADTN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "AEHR": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "AEIS": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "AIXA GY": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "AL2SI FP": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "ALGM": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "ALHC": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "ALIT": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "ALKT": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "ALLE": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "ALSN": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "AME": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "AMKR": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "AMT": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "AMWL": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "AN": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "ANGI": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "APH": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "APPF": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "APPS": {
+      "date": "2026-11-02",
+      "status": "Tentative"
+    },
+    "ASM NA": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "ASSAB SS": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "ATEA NO": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "ATOM": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "AUOTY": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "AUR": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "AXP": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "BAND": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "BDC": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "BE": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "BESI NA": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "BHE": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "BHG SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "BLKB": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "BMI": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "BMY LN": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "BR": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "BWMX": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "BWXT": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "CALX": {
+      "date": "2026-11-02",
+      "status": "Tentative"
+    },
+    "CASH SM": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "CCA CN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "CCJ": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "CDNS": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "CGO CN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "CHGG": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "CIFR": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "CLS": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "CLS CN": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "CLVT": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "CMPR": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "CNK": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "CNXN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "COHU": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "COUR": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "CPNG": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "CRCT": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "CTS": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "CVO CN": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "CVSA": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "DAVA": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "DBD": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "DFIN": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "DLR": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "DTC SJ": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "DXC": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "EAT": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "ECL": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "EDU": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "EEFT": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "EGHT": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "ENTG": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "ENVA": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "EQIX": {
+      "date": "2026-10-28",
+      "status": "Tentative"
+    },
+    "EVER": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "EVO SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "EVTC": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "EXPO": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "EXTR": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "FANUY": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "FBIN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "FCN": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "FDX": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "FLEX": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "FLYW": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "FN": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "FOR A": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "FORM": {
+      "date": "2026-10-28",
+      "status": "Tentative"
+    },
+    "FORR": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "FRSH": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "FSLR": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "FTNT": {
+      "date": "2026-10-28",
+      "status": "Tentative"
+    },
+    "FVRR": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "GIC": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "GOOGL": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "GPI": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "HAPN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "HEXAB SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "HLIT": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "HNGE": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "HTO GA": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "HUBB": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "HURN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "IBTA": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "ICHR": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "IDCC": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "IDR SM": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "IFCN SW": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "INDUSTOW IN": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "INGM": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "IPGP": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "ITRI": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "JKHY": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "JKS": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "KFRC": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "KLAC": {
+      "date": "2026-10-28",
+      "status": "Tentative"
+    },
+    "KN": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "KODK": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "KPN NA": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "LAND SW": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "LDOS": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "LFUS": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "LHX": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "LIGHT NA": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "LMT": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "LOGN SW": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "LOOMIS SS": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "LPL": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "LPX": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "LSS FP": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "MA": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "MAX": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "MBLY": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "MCS": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "MELE BB": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "MIAX": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "MIDS SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "MMYT": {
+      "date": "2026-10-26",
+      "status": "Confirmed"
+    },
+    "MNRO": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "MOD": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "MORN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "MQ": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "MSTR": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "MTLS": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "MTZ": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "MVIS": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "MXL": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "NCAB SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "NETC DC": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "NEWGEN IN": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "NOD NO": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "NSP": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "NVT": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "NVTS": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "NXT": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "OLED": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "OMCL": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "OPAD": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "OPFI": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "ORA FP": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "ORLY": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "OSIS": {
+      "date": "2026-10-29",
+      "status": "Tentative"
+    },
+    "OSPN": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "OUST": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "OWL": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "PAG": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "PAY": {
+      "date": "2026-11-02",
+      "status": "Tentative"
+    },
+    "PBI": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "PCAR": {
+      "date": "2026-10-27",
+      "status": "Tentative"
+    },
+    "PDX SS": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "PG": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "PGY": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "PI": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "PLXS": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "POOL": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "PPLI": {
+      "date": "2026-11-02",
+      "status": "Tentative"
+    },
+    "PRCH": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "PRIM": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "PRL CN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "PRLB": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "PROX BB": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "PRY IM": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "PSN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "PWP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "PWR": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "QTWO": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "QUAD": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "RBBN": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "RCI": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "RDC GY": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "RDWR": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "REAL": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "RIVN": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "RMBS": {
+      "date": "2026-10-26",
+      "status": "Tentative"
+    },
+    "ROG": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "ROKU": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "RSI": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "RVLV": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "SAH": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "SBAC": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "SBRY LN": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "SBUX": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "SCI": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "SF SS": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "SHEN": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "SIFY": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "SILC": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "SIMO": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "SIRI": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "SJJ GY": {
+      "date": "2026-10-23",
+      "status": "Confirmed"
+    },
+    "SKHY": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "SLDP": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "SMCI": {
+      "date": "2026-11-03",
+      "status": "Tentative"
+    },
+    "SNA": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "SPGI": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "SPSC": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "SPT": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "SQNS": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "SRAD": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "SSNC": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "STGW": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "STMPA FP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "STRZ": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "SWKS": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TAL": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "TDOC": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "TEL": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "TEL NO": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "TELIA SS": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "TEMN SW": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "THNC CN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TIETO FH": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "TLN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TMV GY": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TREE": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TRI": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TRI CN": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TRU": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "TRVG": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "TSEM IT": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "TTK GY": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "TTMI": {
+      "date": "2026-10-22",
+      "status": "Confirmed"
+    },
+    "TW": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "UCTT": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "ULS": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "UMC": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "UMG NA": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "V": {
+      "date": "2026-10-27",
+      "status": "Confirmed"
+    },
+    "VRRM": {
+      "date": "2026-10-30",
+      "status": "Confirmed"
+    },
+    "VRT": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "WAY": {
+      "date": "2026-11-02",
+      "status": "Confirmed"
+    },
+    "WCH GY": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "WEX": {
+      "date": "2026-10-28",
+      "status": "Confirmed"
+    },
+    "XFAB FP": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "XMTR": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    },
+    "XRX": {
+      "date": "2026-10-29",
+      "status": "Confirmed"
+    },
+    "ZAL GY": {
+      "date": "2026-11-03",
+      "status": "Confirmed"
+    }
+  }
+}

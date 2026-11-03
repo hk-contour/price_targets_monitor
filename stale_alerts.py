@@ -2,28 +2,50 @@
 """
 Contour Stale Price Target Alert
 
-Signals:
-  1. Name has been in the MASTER portfolio in the past 12 months
-     (verified against a Lightkeeper membership snapshot: portfolio_12mo.json)
-     AND at least one of:
-       a. Price target age >= 135 days since BeginDate
-       b. Current price has drifted 30%+ away from EITHER the upside OR downside PT
-       c. Current price has drifted 20%+ away AND the PT is > 180 days old
-          (mirrors the "Targets may need update" flag in the daily monitor.py)
+Two independent triggers. Either one alone is enough to nudge the analyst.
 
-     Prices are split-adjusted before drift is computed, so a stock split
-     never masquerades as a stale target (ported from monitor.py).
+  1. AGE + DRIFT  (unchanged)
+     Name was in the MASTER portfolio in the past 12 months (verified against
+     the Lightkeeper membership snapshot, portfolio_12mo.json) AND
+       - the price target has not been updated in >= stale_age_days (135), AND
+       - price is >= price_drift_pct (30%) OUTSIDE the target band -- that is
+         30%+ ABOVE the upside PT, or 30%+ BELOW the downside PT.
+     A price inside the band never flags, however old the target. A breakout on
+     a target newer than 135 days never flags. Prices are split-adjusted first,
+     so a stock split cannot masquerade as a breakout.
+
+  2. REPORTED SINCE THE TARGET WAS SET
+     The company has reported (per the TMT Earnings Calendar) and its price
+     target predates the print. Fires regardless of PT age or where price sits
+     in the band -- a 60-day-old target inside the band still needs refreshing
+     once the company has reported against it.
+       - waits earnings_grace_days (3) after the print: analysts know to update,
+         so same-day and next-day nudges are noise
+       - stops after earnings_lookback_days (45), so last quarter's print does
+         not nudge forever
+       - follows the COVERAGE universe (analyst_map.json), not portfolio
+         membership, because a covered name can report while the book holds
+         none of it
+       - only Confirmed/Tentative dates; Bloomberg "Estimate" dates are
+         excluded so nobody is nudged on a guessed date
 
 Action:
   - Email the responsible analyst (or hari only in TEST_MODE)
   - 1st nudge on first detection
   - 2nd nudge after SECOND_NUDGE_DAYS if still stale and no acknowledgment
-  - Stop after 2nd nudge until analyst updates the PT (new BeginDate clears state)
+  - Quiet after the 2nd nudge until a new TRIGGER re-arms the cycle: either a
+    refreshed price target (new BeginDate) or a fresh earnings print. Each
+    quarter's print therefore gets its own two nudges.
 
 Accuracy safeguards:
   - Every ticker that fails a price fetch is reported (never silently dropped).
+  - Delisted / acquired names are reported once under "corporate actions"
+    rather than recurring as price-fetch failures.
   - Every stale name excluded ONLY because it's not in the 12-month portfolio
     is listed in the summary email to hari, so nothing goes undetected.
+
+Identifiers all resolve through ticker_master.json (BBG-keyed). Regenerate the
+derived data files with the scripts in tools/.
 """
 
 import os
@@ -49,6 +71,18 @@ CONFIG = {
     # Split-adjustment guard: if price is this far beyond a band edge, check for a
     # stock split before flagging (a split can look like a huge breakout).
     "split_adjust_trigger_pct": 0.20,
+
+    # ── Earnings trigger (independent of the age/drift rule above) ───────────
+    # A name that has just reported with a price target predating the print
+    # needs a refresh regardless of how old the PT is or where price sits in
+    # the band. Deliberately NOT same-day: analysts know to update, so the
+    # nudge only makes sense once a few days have passed.
+    "earnings_grace_days":    3,   # wait this long after the print before nudging
+    "earnings_lookback_days": 45,  # stop nudging on a print older than this
+    # Earnings alerts follow the coverage universe (analyst_map), not portfolio
+    # membership: a covered name can report while the book holds none of it.
+    "earnings_requires_portfolio": False,
+    "earnings_snapshot_max_age_days": 14,
 
     # ── Alert cadence ─────────────────────────────────────────────────────────
     "second_nudge_days":   5,      # Days after 1st alert before sending 2nd nudge (if no ack)
@@ -86,6 +120,7 @@ CONFIG = {
     "portfolio_12mo_path": "portfolio_12mo.json",   # Lightkeeper 12-month membership snapshot
     "analyst_map_path":    "analyst_map.json",
     "ticker_master_path":  "ticker_master.json",    # BBG-keyed identifier + status map
+    "earnings_dates_path": "earnings_dates.json",   # who has reported recently
     "state_path":          "stale_alerts_state.json",
 
     # Warn in the summary email if the membership snapshot is older than this.
@@ -293,6 +328,64 @@ def load_analyst_map(path: str) -> dict:
         return json.load(f)
 
 
+def load_earnings_dates(path: str) -> tuple[dict, dict]:
+    """
+    Loads earnings_dates.json -> ({bbg: {date, status, session}}, meta).
+
+    Optional: a missing file disables the earnings trigger but leaves the
+    age/drift rule untouched, so the alert degrades rather than breaking.
+    Regenerate with tools/gen_earnings_dates.py.
+    """
+    if not os.path.exists(path):
+        log.warning(f"Earnings dates not found: {path} — earnings trigger disabled "
+                    f"for this run. Run tools/gen_earnings_dates.py.")
+        return {}, {}
+    with open(path) as f:
+        doc = json.load(f)
+    reported = doc.get("reported", {})
+    meta = doc.get("_meta", {})
+    log.info(f"Loaded {len(reported)} recent earnings dates "
+             f"(generated {meta.get('generated', '?')}).")
+    return reported, meta
+
+
+def earnings_reason(ticker: str, info: dict, reported: dict, today: date):
+    """
+    Returns (reason, report_date) when a name has reported since its price
+    target was set, or (None, None).
+
+    Fires when ALL hold:
+      - we have a trusted (Confirmed/Tentative) report date for the name
+      - the print is at least earnings_grace_days old   (not the morning after)
+      - the print is at most earnings_lookback_days old (not last quarter's)
+      - the price target predates the print
+
+    Independent of the age/drift rule: a 60-day-old PT sitting inside the band
+    still needs a refresh once the company has reported against it.
+    """
+    entry = resolve_ticker(ticker)
+    if not entry:
+        return None, None
+    rec = reported.get(entry["bbg"])
+    if not rec:
+        return None, None
+
+    report_date = date.fromisoformat(rec["date"])
+    days_since  = (today - report_date).days
+    if days_since < CONFIG["earnings_grace_days"]:
+        return None, None
+    if days_since > CONFIG["earnings_lookback_days"]:
+        return None, None
+
+    pt_date = date.fromisoformat(info["date"])
+    if pt_date >= report_date:
+        return None, None       # target already refreshed since the print
+
+    return (f"Reported {report_date:%b %d} ({days_since}d ago) — price target "
+            f"dates from {pt_date:%b %d, %Y} and has not been updated since",
+            report_date)
+
+
 def load_state(path: str) -> dict:
     """Loads alert state. Creates fresh state if file missing."""
     empty = {"first_alert": {}, "second_alert": {}, "acknowledged": {}}
@@ -395,14 +488,19 @@ def is_acknowledged(ticker: str, state: dict, info: dict) -> bool:
     return True
 
 
-def alert_status(ticker: str, state: dict, info: dict) -> str:
+def alert_status(ticker: str, state: dict, info: dict, report_date: date = None) -> str:
     """
     Returns:
-      'send_first'   — never alerted, or state was cleared by a new PT
+      'send_first'   — never alerted, or state was cleared by a new PT / new print
       'send_second'  — first alert sent 5+ days ago, no ack, no second sent yet
       'wait'         — first alert sent < 5 days ago
       'done'         — second alert already sent
       'acknowledged' — analyst acknowledged
+
+    The two-nudge cadence is unchanged. What re-arms it is a new TRIGGER: either
+    a refreshed price target (as before) or, now, a fresh earnings print. That
+    gives each quarter's print its own two nudges instead of a name going
+    permanently silent after its second reminder.
     """
     if is_acknowledged(ticker, state, info):
         return "acknowledged"
@@ -415,16 +513,19 @@ def alert_status(ticker: str, state: dict, info: dict) -> str:
 
     first_date = date.fromisoformat(first["date"])
     pt_date    = date.fromisoformat(info["date"])
+    # Most recent thing that justifies restarting the cycle.
+    trigger_date = max(pt_date, report_date) if report_date else pt_date
 
-    # If a new PT was posted after our first alert → reset
-    if pt_date > first_date:
-        log.info(f"  {ticker}: PT updated after first alert — resetting state")
+    # If a new PT was posted, or the company reported, after our first alert → reset
+    if trigger_date > first_date:
+        what = "PT updated" if trigger_date == pt_date else "reported"
+        log.info(f"  {ticker}: {what} after first alert — resetting state")
         return "send_first"
 
     if second:
         second_date = date.fromisoformat(second["date"])
-        if pt_date > second_date:
-            return "send_first"   # PT updated after second alert too
+        if trigger_date > second_date:
+            return "send_first"   # new trigger after the second alert too
         return "done"
 
     days_since_first = (date.today() - first_date).days
@@ -507,8 +608,9 @@ def build_analyst_email(analyst_code: str, alerts: list, is_second: bool) -> str
     Hi {first_name},<br><br>
     {"This is a <b>second reminder</b> — the following" if is_second else "The following"}
     price target{'s' if len(alerts) != 1 else ''} in your coverage
-    {'have' if len(alerts) != 1 else 'has'} not been updated recently or
-    {'have' if len(alerts) != 1 else 'has'} moved outside the target range.
+    {'need' if len(alerts) != 1 else 'needs'} a refresh &mdash; the company has
+    reported since the target was set, or the target is stale and price has
+    moved outside the range. The reason is shown per name.
     For each name, click <b>Email Update</b> to send your revised upside/downside
     (or "no change") to
     <a href="mailto:{CONFIG['pricetargets_inbox']}" style="color:{intro_color};font-weight:600">{CONFIG['pricetargets_inbox']}</a>.
@@ -822,6 +924,7 @@ def run():
     targets            = load_targets(CONFIG["csv_path"])
     portfolio, pf_meta = load_portfolio_12mo(CONFIG["portfolio_12mo_path"])
     analyst_map        = load_analyst_map(CONFIG["analyst_map_path"])
+    earnings, earn_meta = load_earnings_dates(CONFIG["earnings_dates_path"])
     state              = load_state(CONFIG["state_path"])
 
     today = date.today()
@@ -835,6 +938,15 @@ def run():
             snapshot_warning = (f"Portfolio membership snapshot is {snap_age} days old "
                                 f"(generated {gen}). Consider regenerating from Lightkeeper.")
             log.warning(snapshot_warning)
+
+    earn_gen = earn_meta.get("generated")
+    if earn_gen:
+        earn_age = (today - date.fromisoformat(earn_gen)).days
+        if earn_age > CONFIG["earnings_snapshot_max_age_days"]:
+            w = (f"Earnings calendar snapshot is {earn_age} days old (generated "
+                 f"{earn_gen}). Recent prints will be missed until it is refreshed.")
+            snapshot_warning = f"{snapshot_warning} {w}" if snapshot_warning else w
+            log.warning(w)
 
     # ── Identify stale tickers ────────────────────────────────────────────────
     price_errors      = []
@@ -852,9 +964,16 @@ def run():
     for ticker, info in sorted(targets.items()):
         age_stale = info["age_days"] >= CONFIG["stale_age_days"]
 
+        # Earnings trigger is evaluated first: it follows the COVERAGE universe,
+        # not portfolio membership, because a covered name can report while the
+        # book holds none of it (HOOD is the standing example). When it fires it
+        # overrides the portfolio filter below.
+        earn_reason, report_date = earnings_reason(ticker, info, earnings, today)
+        earnings_override = bool(earn_reason) and not CONFIG["earnings_requires_portfolio"]
+
         # ── Filter 1: Must have been in the MASTER portfolio in past 12 months ─
         in_portfolio = ticker in portfolio
-        if not in_portfolio:
+        if not in_portfolio and not earnings_override:
             # SAFEGUARD: surface names that an analyst actively covers (has an
             # assignment) yet aren't in the portfolio and are age-stale — these
             # are the cases where a wrong exclusion would actually matter.
@@ -912,11 +1031,14 @@ def run():
 
         # ── Check staleness (split-adjusted) ──────────────────────────────────
         reasons, adj = staleness_reasons(ticker, info, price)
+        # The earnings trigger is additive: either rule alone is enough to nudge.
+        if earn_reason:
+            reasons = [earn_reason] + reasons
         if not reasons:
-            continue   # Not stale
+            continue   # Neither rule fired
 
         # ── Check alert state ─────────────────────────────────────────────────
-        status = alert_status(ticker, state, info)
+        status = alert_status(ticker, state, info, report_date)
         log.info(f"  STALE {ticker}: status={status}, reasons={reasons}")
 
         if status == "acknowledged":
@@ -941,6 +1063,7 @@ def run():
             "reasons":   reasons,
             "nudge":     nudge_num,
             "is_second": is_second,
+            "earnings":  bool(earn_reason),
         }
 
         analyst_alerts.setdefault(analyst_code, []).append(alert_entry)
