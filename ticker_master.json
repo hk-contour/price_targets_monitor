@@ -1,0 +1,2519 @@
+{
+  "_meta": {
+    "aliases": "Codes used by Contour-Price-Targets.csv and the Lightkeeper blotter",
+    "confidence": {
+      "assumed": "inferred as a plain US listing; validate with tools/check_tickers.py",
+      "resolved": "curated in tools/gen_ticker_master.py OVERRIDES"
+    },
+    "counts": {
+      "assumed": 260,
+      "corporate_action": 4,
+      "resolved": 40
+    },
+    "generated": "2026-11-03",
+    "key": "Bloomberg ticker, space form (e.g. 'IFX GY')",
+    "seeded_from": [
+      "tools/lk_pulls/days_held_2026-11-02.json",
+      "tools/lk_pulls/analyst_2026-11-02.json",
+      "analyst_map.json"
+    ],
+    "status_values": [
+      "live",
+      "acquired",
+      "private",
+      "renamed"
+    ]
+  },
+  "tickers": {
+    "000660 KS": {
+      "aliases": [
+        "000660"
+      ],
+      "confidence": "resolved",
+      "name": "SK Hynix",
+      "status": "live",
+      "yf": "000660.KS"
+    },
+    "005930 KS": {
+      "aliases": [
+        "005930"
+      ],
+      "confidence": "resolved",
+      "name": "Samsung Electronics",
+      "status": "live",
+      "yf": "005930.KS"
+    },
+    "2330 TT": {
+      "aliases": [
+        "2330"
+      ],
+      "confidence": "resolved",
+      "name": "TSMC (Taiwan)",
+      "status": "live",
+      "yf": "2330.TW"
+    },
+    "3034 TT": {
+      "aliases": [
+        "3034"
+      ],
+      "confidence": "resolved",
+      "name": "Novatek Microelectronics",
+      "status": "live",
+      "yf": "3034.TW"
+    },
+    "4324 JP": {
+      "aliases": [
+        "4324"
+      ],
+      "confidence": "resolved",
+      "name": "Dentsu",
+      "status": "live",
+      "yf": "4324.T"
+    },
+    "4901 JP": {
+      "aliases": [
+        "4901"
+      ],
+      "confidence": "resolved",
+      "name": "FUJIFILM",
+      "status": "live",
+      "yf": "4901.T"
+    },
+    "5802 JP": {
+      "aliases": [
+        "5802"
+      ],
+      "confidence": "resolved",
+      "name": "Sumitomo Electric",
+      "status": "live",
+      "yf": "5802.T"
+    },
+    "6098 JP": {
+      "aliases": [
+        "6098"
+      ],
+      "confidence": "resolved",
+      "name": "Recruit Holdings",
+      "status": "live",
+      "yf": "6098.T"
+    },
+    "6752 JP": {
+      "aliases": [
+        "6752"
+      ],
+      "confidence": "resolved",
+      "name": "Panasonic",
+      "status": "live",
+      "yf": "6752.T"
+    },
+    "6857 JP": {
+      "aliases": [
+        "6857"
+      ],
+      "confidence": "resolved",
+      "name": "Advantest",
+      "status": "live",
+      "yf": "6857.T"
+    },
+    "6981 JP": {
+      "aliases": [
+        "6981"
+      ],
+      "confidence": "resolved",
+      "name": "Murata Manufacturing",
+      "status": "live",
+      "yf": "6981.T"
+    },
+    "7751 JP": {
+      "aliases": [
+        "7751"
+      ],
+      "confidence": "resolved",
+      "name": "Canon",
+      "status": "live",
+      "yf": "7751.T"
+    },
+    "7974 JP": {
+      "aliases": [
+        "7974"
+      ],
+      "confidence": "resolved",
+      "name": "Nintendo",
+      "status": "live",
+      "yf": "7974.T"
+    },
+    "8136 JP": {
+      "aliases": [
+        "8136"
+      ],
+      "confidence": "resolved",
+      "name": "Sanrio",
+      "status": "live",
+      "yf": "8136.T"
+    },
+    "9992 HK": {
+      "aliases": [
+        "9992"
+      ],
+      "confidence": "resolved",
+      "name": "Pop Mart",
+      "status": "live",
+      "yf": "9992.HK"
+    },
+    "AAOI US": {
+      "aliases": [
+        "AAOI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AAOI"
+    },
+    "AAPL US": {
+      "aliases": [
+        "AAPL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AAPL"
+    },
+    "ABNB US": {
+      "aliases": [
+        "ABNB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ABNB"
+    },
+    "ACM US": {
+      "aliases": [
+        "ACM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ACM"
+    },
+    "ACN US": {
+      "aliases": [
+        "ACN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ACN"
+    },
+    "ACVA US": {
+      "aliases": [
+        "ACVA"
+      ],
+      "confidence": "resolved",
+      "note": "Acquired by Copart; cash merger 2026-10-20",
+      "status": "acquired",
+      "status_date": "2026-10-16",
+      "successor": "CPRT US",
+      "yf": null
+    },
+    "ADBE US": {
+      "aliases": [
+        "ADBE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ADBE"
+    },
+    "ADI US": {
+      "aliases": [
+        "ADI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ADI"
+    },
+    "ADP US": {
+      "aliases": [
+        "ADP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ADP"
+    },
+    "ADSK US": {
+      "aliases": [
+        "ADSK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ADSK"
+    },
+    "ADYEN NA": {
+      "aliases": [
+        "ADYEN"
+      ],
+      "confidence": "resolved",
+      "name": "Adyen",
+      "status": "live",
+      "yf": "ADYEN.AS"
+    },
+    "AG1 GY": {
+      "aliases": [
+        "AG1G"
+      ],
+      "confidence": "resolved",
+      "name": "AUTO1 Group",
+      "status": "live",
+      "yf": "AG1.F"
+    },
+    "AKAM US": {
+      "aliases": [
+        "AKAM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AKAM"
+    },
+    "ALAB US": {
+      "aliases": [
+        "ALAB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ALAB"
+    },
+    "AMAT US": {
+      "aliases": [
+        "AMAT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AMAT"
+    },
+    "AMD US": {
+      "aliases": [
+        "AMD"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AMD"
+    },
+    "AMZN US": {
+      "aliases": [
+        "AMZN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AMZN"
+    },
+    "ANET US": {
+      "aliases": [
+        "ANET"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ANET"
+    },
+    "APP US": {
+      "aliases": [
+        "APP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "APP"
+    },
+    "ARM US": {
+      "aliases": [
+        "ARM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ARM"
+    },
+    "ARMK US": {
+      "aliases": [
+        "ARMK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ARMK"
+    },
+    "ASGN US": {
+      "aliases": [
+        "ASGN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ASGN"
+    },
+    "ASML US": {
+      "aliases": [
+        "ASML"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ASML"
+    },
+    "ATKR US": {
+      "aliases": [
+        "ATKR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ATKR"
+    },
+    "ATRL CN": {
+      "aliases": [
+        "ATRL"
+      ],
+      "confidence": "resolved",
+      "name": "SNC-Lavalin / AtkinsRealis",
+      "status": "live",
+      "yf": "ATRL.TO"
+    },
+    "AVGO US": {
+      "aliases": [
+        "AVGO"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "AVGO"
+    },
+    "BAH US": {
+      "aliases": [
+        "BAH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BAH"
+    },
+    "BBY US": {
+      "aliases": [
+        "BBY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BBY"
+    },
+    "BCE US": {
+      "aliases": [
+        "BCE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BCE"
+    },
+    "BFAM US": {
+      "aliases": [
+        "BFAM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BFAM"
+    },
+    "BFH US": {
+      "aliases": [
+        "BFH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BFH"
+    },
+    "BILL US": {
+      "aliases": [
+        "BILL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BILL"
+    },
+    "BKNG US": {
+      "aliases": [
+        "BKNG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BKNG"
+    },
+    "BL US": {
+      "aliases": [
+        "BL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BL"
+    },
+    "BMBL US": {
+      "aliases": [
+        "BMBL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BMBL"
+    },
+    "BRZE US": {
+      "aliases": [
+        "BRZE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BRZE"
+    },
+    "BSY US": {
+      "aliases": [
+        "BSY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BSY"
+    },
+    "BWA US": {
+      "aliases": [
+        "BWA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "BWA"
+    },
+    "CAPP US": {
+      "aliases": [
+        "CAPP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CAPP"
+    },
+    "CARG US": {
+      "aliases": [
+        "CARG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CARG"
+    },
+    "CART US": {
+      "aliases": [
+        "CART"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CART"
+    },
+    "CBOE US": {
+      "aliases": [
+        "CBOE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CBOE"
+    },
+    "CBZ US": {
+      "aliases": [
+        "CBZ"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CBZ"
+    },
+    "CDW US": {
+      "aliases": [
+        "CDW"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CDW"
+    },
+    "CGNX US": {
+      "aliases": [
+        "CGNX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CGNX"
+    },
+    "CHH US": {
+      "aliases": [
+        "CHH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CHH"
+    },
+    "CHKP US": {
+      "aliases": [
+        "CHKP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CHKP"
+    },
+    "CHTR US": {
+      "aliases": [
+        "CHTR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CHTR"
+    },
+    "CHYM US": {
+      "aliases": [
+        "CHYM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CHYM"
+    },
+    "CIEN US": {
+      "aliases": [
+        "CIEN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CIEN"
+    },
+    "CMCSA US": {
+      "aliases": [
+        "CMCSA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CMCSA"
+    },
+    "CNXC US": {
+      "aliases": [
+        "CNXC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CNXC"
+    },
+    "COIN US": {
+      "aliases": [
+        "COIN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "COIN"
+    },
+    "CPRT US": {
+      "aliases": [
+        "CPRT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CPRT"
+    },
+    "CRCL US": {
+      "aliases": [
+        "CRCL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CRCL"
+    },
+    "CRM US": {
+      "aliases": [
+        "CRM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CRM"
+    },
+    "CROX US": {
+      "aliases": [
+        "CROX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CROX"
+    },
+    "CRWD US": {
+      "aliases": [
+        "CRWD"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CRWD"
+    },
+    "CRWV US": {
+      "aliases": [
+        "CRWV"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CRWV"
+    },
+    "CSCO US": {
+      "aliases": [
+        "CSCO"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CSCO"
+    },
+    "CSGP US": {
+      "aliases": [
+        "CSGP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CSGP"
+    },
+    "CSU CN": {
+      "aliases": [
+        "CSU"
+      ],
+      "confidence": "resolved",
+      "name": "Constellation Software",
+      "status": "live",
+      "yf": "CSU.TO"
+    },
+    "CTAS US": {
+      "aliases": [
+        "CTAS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CTAS"
+    },
+    "CTSH US": {
+      "aliases": [
+        "CTSH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CTSH"
+    },
+    "CVLT US": {
+      "aliases": [
+        "CVLT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CVLT"
+    },
+    "CVNA US": {
+      "aliases": [
+        "CVNA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CVNA"
+    },
+    "CYBR US": {
+      "aliases": [
+        "CYBR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "CYBR"
+    },
+    "DASH US": {
+      "aliases": [
+        "DASH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DASH"
+    },
+    "DAVE US": {
+      "aliases": [
+        "DAVE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DAVE"
+    },
+    "DAY US": {
+      "aliases": [
+        "DAY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DAY"
+    },
+    "DDOG US": {
+      "aliases": [
+        "DDOG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DDOG"
+    },
+    "DKNG US": {
+      "aliases": [
+        "DKNG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DKNG"
+    },
+    "DNB US": {
+      "aliases": [
+        "DNB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DNB"
+    },
+    "DOCN US": {
+      "aliases": [
+        "DOCN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DOCN"
+    },
+    "DOCS US": {
+      "aliases": [
+        "DOCS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DOCS"
+    },
+    "DOX US": {
+      "aliases": [
+        "DOX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DOX"
+    },
+    "DPZ US": {
+      "aliases": [
+        "DPZ"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DPZ"
+    },
+    "DSY FP": {
+      "aliases": [
+        "DAST"
+      ],
+      "confidence": "resolved",
+      "name": "Dassault Systemes",
+      "status": "live",
+      "yf": "DSY.PA"
+    },
+    "DT US": {
+      "aliases": [
+        "DT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DT"
+    },
+    "DUOL US": {
+      "aliases": [
+        "DUOL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DUOL"
+    },
+    "DV US": {
+      "aliases": [
+        "DV"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "DV"
+    },
+    "EA US": {
+      "aliases": [
+        "EA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "EA"
+    },
+    "EBAY US": {
+      "aliases": [
+        "EBAY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "EBAY"
+    },
+    "ECHO US": {
+      "aliases": [
+        "SATS"
+      ],
+      "confidence": "resolved",
+      "name": "EchoStar (was SATS)",
+      "status": "live",
+      "yf": "ECHO"
+    },
+    "EFX US": {
+      "aliases": [
+        "EFX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "EFX"
+    },
+    "ENPH US": {
+      "aliases": [
+        "ENPH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ENPH"
+    },
+    "ESLT IT": {
+      "aliases": [
+        "ESLT"
+      ],
+      "confidence": "resolved",
+      "name": "Elbit Systems",
+      "status": "live",
+      "yf": "ESLT"
+    },
+    "ETN US": {
+      "aliases": [
+        "ETN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ETN"
+    },
+    "ETSY US": {
+      "aliases": [
+        "ETSY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ETSY"
+    },
+    "EXLS US": {
+      "aliases": [
+        "EXLS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "EXLS"
+    },
+    "EXPE US": {
+      "aliases": [
+        "EXPE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "EXPE"
+    },
+    "F US": {
+      "aliases": [
+        "F"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "F"
+    },
+    "FAF US": {
+      "aliases": [
+        "FAF"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FAF"
+    },
+    "FDS US": {
+      "aliases": [
+        "FDS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FDS"
+    },
+    "FFIV US": {
+      "aliases": [
+        "FFIV"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FFIV"
+    },
+    "FG US": {
+      "aliases": [
+        "FG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FG"
+    },
+    "FICO US": {
+      "aliases": [
+        "FICO"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FICO"
+    },
+    "FIG US": {
+      "aliases": [
+        "FIG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FIG"
+    },
+    "FISV US": {
+      "aliases": [
+        "FISV"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FISV"
+    },
+    "FIVE US": {
+      "aliases": [
+        "FIVE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FIVE"
+    },
+    "FIVN US": {
+      "aliases": [
+        "FIVN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FIVN"
+    },
+    "FIX US": {
+      "aliases": [
+        "FIX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FIX"
+    },
+    "FLUT US": {
+      "aliases": [
+        "FLTRF"
+      ],
+      "confidence": "resolved",
+      "name": "Flutter Entertainment",
+      "status": "live",
+      "yf": "FLUT"
+    },
+    "FNF US": {
+      "aliases": [
+        "FNF"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FNF"
+    },
+    "FOXA US": {
+      "aliases": [
+        "FOXA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FOXA"
+    },
+    "FWONK US": {
+      "aliases": [
+        "FWONK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "FWONK"
+    },
+    "G US": {
+      "aliases": [
+        "G"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "G"
+    },
+    "GDDY US": {
+      "aliases": [
+        "GDDY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GDDY"
+    },
+    "GEN US": {
+      "aliases": [
+        "GEN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GEN"
+    },
+    "GEV US": {
+      "aliases": [
+        "GEV"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GEV"
+    },
+    "GFS US": {
+      "aliases": [
+        "GFS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GFS"
+    },
+    "GIB/A CN": {
+      "aliases": [
+        "GIBA"
+      ],
+      "confidence": "resolved",
+      "name": "CGI Inc A",
+      "status": "live",
+      "yf": "GIB-A.TO"
+    },
+    "GLBE US": {
+      "aliases": [
+        "GLBE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GLBE"
+    },
+    "GLW US": {
+      "aliases": [
+        "GLW"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GLW"
+    },
+    "GM US": {
+      "aliases": [
+        "GM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GM"
+    },
+    "GOOG US": {
+      "aliases": [
+        "GOOG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GOOG"
+    },
+    "GRMN US": {
+      "aliases": [
+        "GRMN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GRMN"
+    },
+    "GRND US": {
+      "aliases": [
+        "GRND"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GRND"
+    },
+    "GTLB US": {
+      "aliases": [
+        "GTLB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GTLB"
+    },
+    "GTM US": {
+      "aliases": [
+        "GTM",
+        "ZI"
+      ],
+      "confidence": "resolved",
+      "former_codes": [
+        "ZI"
+      ],
+      "status": "live",
+      "yf": "GTM"
+    },
+    "GWRE US": {
+      "aliases": [
+        "GWRE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "GWRE"
+    },
+    "HLT US": {
+      "aliases": [
+        "HLT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HLT"
+    },
+    "HOOD US": {
+      "aliases": [
+        "HOOD"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HOOD"
+    },
+    "HPE US": {
+      "aliases": [
+        "HPE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HPE"
+    },
+    "HQY US": {
+      "aliases": [
+        "HQY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HQY"
+    },
+    "HRB US": {
+      "aliases": [
+        "HRB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HRB"
+    },
+    "HUBS US": {
+      "aliases": [
+        "HUBS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HUBS"
+    },
+    "HUT US": {
+      "aliases": [
+        "HUT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "HUT"
+    },
+    "IBM US": {
+      "aliases": [
+        "IBM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "IBM"
+    },
+    "IFX GY": {
+      "aliases": [
+        "IFXGN"
+      ],
+      "confidence": "resolved",
+      "name": "Infineon Technologies",
+      "status": "live",
+      "yf": "IFX.DE"
+    },
+    "INFA US": {
+      "aliases": [
+        "INFA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "INFA"
+    },
+    "INFY US": {
+      "aliases": [
+        "INFY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "INFY"
+    },
+    "INTA US": {
+      "aliases": [
+        "INTA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "INTA"
+    },
+    "INTC US": {
+      "aliases": [
+        "INTC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "INTC"
+    },
+    "INTU US": {
+      "aliases": [
+        "INTU"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "INTU"
+    },
+    "IOT US": {
+      "aliases": [
+        "IOT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "IOT"
+    },
+    "IPG US": {
+      "aliases": [
+        "IPG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "IPG"
+    },
+    "IRDM US": {
+      "aliases": [
+        "IRDM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "IRDM"
+    },
+    "IRM US": {
+      "aliases": [
+        "IRM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "IRM"
+    },
+    "IT US": {
+      "aliases": [
+        "IT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "IT"
+    },
+    "KEYS US": {
+      "aliases": [
+        "KEYS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "KEYS"
+    },
+    "KR US": {
+      "aliases": [
+        "KR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "KR"
+    },
+    "KVYO US": {
+      "aliases": [
+        "KVYO"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "KVYO"
+    },
+    "LAD US": {
+      "aliases": [
+        "LAD"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LAD"
+    },
+    "LAMR US": {
+      "aliases": [
+        "LAMR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LAMR"
+    },
+    "LAUR US": {
+      "aliases": [
+        "LAUR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LAUR"
+    },
+    "LBTYA US": {
+      "aliases": [
+        "LBTYA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LBTYA"
+    },
+    "LBTYK US": {
+      "aliases": [
+        "LBTYK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LBTYK"
+    },
+    "LEG US": {
+      "aliases": [
+        "LEG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LEG"
+    },
+    "LION US": {
+      "aliases": [
+        "LION"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LION"
+    },
+    "LITE US": {
+      "aliases": [
+        "LITE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LITE"
+    },
+    "LOGI US": {
+      "aliases": [
+        "LOGI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LOGI"
+    },
+    "LOPE US": {
+      "aliases": [
+        "LOPE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LOPE"
+    },
+    "LRCX US": {
+      "aliases": [
+        "LRCX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LRCX"
+    },
+    "LSCC US": {
+      "aliases": [
+        "LSCC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LSCC"
+    },
+    "LULU US": {
+      "aliases": [
+        "LULU"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LULU"
+    },
+    "LUMN US": {
+      "aliases": [
+        "LUMN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LUMN"
+    },
+    "LYFT US": {
+      "aliases": [
+        "LYFT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "LYFT"
+    },
+    "MANH US": {
+      "aliases": [
+        "MANH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MANH"
+    },
+    "MCHP US": {
+      "aliases": [
+        "MCHP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MCHP"
+    },
+    "MDB US": {
+      "aliases": [
+        "MDB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MDB"
+    },
+    "META US": {
+      "aliases": [
+        "META"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "META"
+    },
+    "MKSI US": {
+      "aliases": [
+        "MKSI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MKSI"
+    },
+    "MNTN US": {
+      "aliases": [
+        "MNTN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MNTN"
+    },
+    "MPWR US": {
+      "aliases": [
+        "MPWR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MPWR"
+    },
+    "MRVL US": {
+      "aliases": [
+        "MRVL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MRVL"
+    },
+    "MSFT US": {
+      "aliases": [
+        "MSFT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MSFT"
+    },
+    "MSGS US": {
+      "aliases": [
+        "MSGS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MSGS"
+    },
+    "MTCH US": {
+      "aliases": [
+        "MTCH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "MTCH"
+    },
+    "NBIS US": {
+      "aliases": [
+        "NBIS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NBIS"
+    },
+    "NET US": {
+      "aliases": [
+        "NET"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NET"
+    },
+    "NFLX US": {
+      "aliases": [
+        "NFLX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NFLX"
+    },
+    "NICE IT": {
+      "aliases": [
+        "NICE"
+      ],
+      "confidence": "resolved",
+      "name": "NICE Ltd (ADR)",
+      "status": "live",
+      "yf": "NICE"
+    },
+    "NOK US": {
+      "aliases": [
+        "NOKIA"
+      ],
+      "confidence": "resolved",
+      "name": "Nokia (ADR)",
+      "status": "live",
+      "yf": "NOK"
+    },
+    "NOW US": {
+      "aliases": [
+        "NOW"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NOW"
+    },
+    "NTAP US": {
+      "aliases": [
+        "NTAP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NTAP"
+    },
+    "NTNX US": {
+      "aliases": [
+        "NTNX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NTNX"
+    },
+    "NVDA US": {
+      "aliases": [
+        "NVDA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NVDA"
+    },
+    "NXPI US": {
+      "aliases": [
+        "NXPI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NXPI"
+    },
+    "NYT US": {
+      "aliases": [
+        "NYT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "NYT"
+    },
+    "OKTA US": {
+      "aliases": [
+        "OKTA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "OKTA"
+    },
+    "OMC US": {
+      "aliases": [
+        "OMC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "OMC"
+    },
+    "ON US": {
+      "aliases": [
+        "ON"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ON"
+    },
+    "OPEN US": {
+      "aliases": [
+        "OPEN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "OPEN"
+    },
+    "ORCL US": {
+      "aliases": [
+        "ORCL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ORCL"
+    },
+    "OS US": {
+      "aliases": [
+        "OS"
+      ],
+      "confidence": "resolved",
+      "note": "Taken private by Hg; ceased trading on Nasdaq",
+      "status": "private",
+      "status_date": "2026-04-01",
+      "yf": null
+    },
+    "P US": {
+      "aliases": [
+        "P"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "P"
+    },
+    "PANW US": {
+      "aliases": [
+        "PANW"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PANW"
+    },
+    "PATH US": {
+      "aliases": [
+        "PATH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PATH"
+    },
+    "PAYC US": {
+      "aliases": [
+        "PAYC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PAYC"
+    },
+    "PAYX US": {
+      "aliases": [
+        "PAYX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PAYX"
+    },
+    "PCOR US": {
+      "aliases": [
+        "PCOR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PCOR"
+    },
+    "PCTY US": {
+      "aliases": [
+        "PCTY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PCTY"
+    },
+    "PEGA US": {
+      "aliases": [
+        "PEGA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PEGA"
+    },
+    "PINS US": {
+      "aliases": [
+        "PINS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PINS"
+    },
+    "PLTR US": {
+      "aliases": [
+        "PLTR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PLTR"
+    },
+    "POWL US": {
+      "aliases": [
+        "POWL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "POWL"
+    },
+    "PSKY US": {
+      "aliases": [
+        "PSKY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PSKY"
+    },
+    "PSTG US": {
+      "aliases": [
+        "PSTG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PSTG"
+    },
+    "PTC US": {
+      "aliases": [
+        "PTC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PTC"
+    },
+    "PUB FP": {
+      "aliases": [
+        "PUBP"
+      ],
+      "confidence": "resolved",
+      "name": "Publicis Groupe",
+      "status": "live",
+      "yf": "PUB.PA"
+    },
+    "PYCR US": {
+      "aliases": [
+        "PYCR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PYCR"
+    },
+    "PYPL US": {
+      "aliases": [
+        "PYPL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "PYPL"
+    },
+    "QCOM US": {
+      "aliases": [
+        "QCOM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "QCOM"
+    },
+    "QLYS US": {
+      "aliases": [
+        "QLYS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "QLYS"
+    },
+    "QRVO US": {
+      "aliases": [
+        "QRVO"
+      ],
+      "confidence": "resolved",
+      "note": "Acquired by Skyworks; delisted from Nasdaq",
+      "status": "acquired",
+      "status_date": "2026-10-05",
+      "successor": "SWKS US",
+      "yf": null
+    },
+    "RACE US": {
+      "aliases": [
+        "RACE"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RACE"
+    },
+    "RBLX US": {
+      "aliases": [
+        "RBLX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RBLX"
+    },
+    "RBRK US": {
+      "aliases": [
+        "RBRK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RBRK"
+    },
+    "RCI/B CN": {
+      "aliases": [
+        "RCIB"
+      ],
+      "confidence": "resolved",
+      "name": "Rogers Communications B",
+      "status": "live",
+      "yf": "RCI-B.TO"
+    },
+    "RDDT US": {
+      "aliases": [
+        "RDDT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RDDT"
+    },
+    "REA AU": {
+      "aliases": [
+        "REA"
+      ],
+      "confidence": "resolved",
+      "name": "REA Group",
+      "status": "live",
+      "yf": "REA.AX"
+    },
+    "REL LN": {
+      "aliases": [
+        "REL"
+      ],
+      "confidence": "resolved",
+      "name": "RELX",
+      "status": "live",
+      "yf": "REL.L"
+    },
+    "RH US": {
+      "aliases": [
+        "RH"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RH"
+    },
+    "RHI US": {
+      "aliases": [
+        "RHI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RHI"
+    },
+    "RHM GY": {
+      "aliases": [
+        "RHMG"
+      ],
+      "confidence": "resolved",
+      "name": "Rheinmetall",
+      "status": "live",
+      "yf": "RHM.DE"
+    },
+    "RKT US": {
+      "aliases": [
+        "RKT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RKT"
+    },
+    "RNG US": {
+      "aliases": [
+        "RNG"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RNG"
+    },
+    "ROP US": {
+      "aliases": [
+        "ROP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ROP"
+    },
+    "RPD US": {
+      "aliases": [
+        "RPD"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RPD"
+    },
+    "RRX US": {
+      "aliases": [
+        "RRX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RRX"
+    },
+    "RUN US": {
+      "aliases": [
+        "RUN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "RUN"
+    },
+    "SAP GY": {
+      "aliases": [
+        "SAPG"
+      ],
+      "confidence": "resolved",
+      "name": "SAP",
+      "status": "live",
+      "yf": "SAP.DE"
+    },
+    "SEZL US": {
+      "aliases": [
+        "SEZL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SEZL"
+    },
+    "SGI US": {
+      "aliases": [
+        "SGI",
+        "TPX"
+      ],
+      "confidence": "resolved",
+      "former_codes": [
+        "TPX"
+      ],
+      "status": "live",
+      "yf": "SGI"
+    },
+    "SHOP US": {
+      "aliases": [
+        "SHOP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SHOP"
+    },
+    "SITM US": {
+      "aliases": [
+        "SITM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SITM"
+    },
+    "SLM US": {
+      "aliases": [
+        "SLM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SLM"
+    },
+    "SMTC US": {
+      "aliases": [
+        "SMTC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SMTC"
+    },
+    "SNAP US": {
+      "aliases": [
+        "SNAP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SNAP"
+    },
+    "SNDK US": {
+      "aliases": [
+        "SNDK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SNDK"
+    },
+    "SNOW US": {
+      "aliases": [
+        "SNOW"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SNOW"
+    },
+    "SOFI US": {
+      "aliases": [
+        "SOFI"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SOFI"
+    },
+    "SPHR US": {
+      "aliases": [
+        "SPHR"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SPHR"
+    },
+    "SPOT US": {
+      "aliases": [
+        "SPOT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SPOT"
+    },
+    "STM US": {
+      "aliases": [
+        "STM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "STM"
+    },
+    "STN CN": {
+      "aliases": [
+        "STN"
+      ],
+      "confidence": "resolved",
+      "name": "Stantec",
+      "status": "live",
+      "yf": "STN.TO"
+    },
+    "STX US": {
+      "aliases": [
+        "STX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "STX"
+    },
+    "SYF US": {
+      "aliases": [
+        "SYF"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SYF"
+    },
+    "SYM US": {
+      "aliases": [
+        "SYM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "SYM"
+    },
+    "T US": {
+      "aliases": [
+        "T"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "T"
+    },
+    "TEAM US": {
+      "aliases": [
+        "TEAM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TEAM"
+    },
+    "TENB US": {
+      "aliases": [
+        "TENB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TENB"
+    },
+    "TER US": {
+      "aliases": [
+        "TER"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TER"
+    },
+    "TMUS US": {
+      "aliases": [
+        "TMUS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TMUS"
+    },
+    "TNET US": {
+      "aliases": [
+        "TNET"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TNET"
+    },
+    "TOST US": {
+      "aliases": [
+        "TOST"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TOST"
+    },
+    "TPK LN": {
+      "aliases": [
+        "TEPRF"
+      ],
+      "confidence": "resolved",
+      "name": "Travis Perkins",
+      "status": "live",
+      "yf": "TPK.L"
+    },
+    "TRMB US": {
+      "aliases": [
+        "TRMB"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TRMB"
+    },
+    "TSLA US": {
+      "aliases": [
+        "TSLA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TSLA"
+    },
+    "TSM US": {
+      "aliases": [
+        "TSM"
+      ],
+      "confidence": "resolved",
+      "name": "TSMC (ADR)",
+      "status": "live",
+      "yf": "TSM"
+    },
+    "TT US": {
+      "aliases": [
+        "TT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TT"
+    },
+    "TTAN US": {
+      "aliases": [
+        "TTAN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TTAN"
+    },
+    "TTD US": {
+      "aliases": [
+        "TTD"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TTD"
+    },
+    "TTWO US": {
+      "aliases": [
+        "TTWO"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TTWO"
+    },
+    "TWLO US": {
+      "aliases": [
+        "TWLO"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TWLO"
+    },
+    "TXN US": {
+      "aliases": [
+        "TXN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TXN"
+    },
+    "TYL US": {
+      "aliases": [
+        "TYL"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "TYL"
+    },
+    "UBER US": {
+      "aliases": [
+        "UBER"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "UBER"
+    },
+    "ULTA US": {
+      "aliases": [
+        "ULTA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ULTA"
+    },
+    "UPS US": {
+      "aliases": [
+        "UPS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "UPS"
+    },
+    "UPST US": {
+      "aliases": [
+        "UPST"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "UPST"
+    },
+    "UPWK US": {
+      "aliases": [
+        "UPWK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "UPWK"
+    },
+    "VEEV US": {
+      "aliases": [
+        "VEEV"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VEEV"
+    },
+    "VERX US": {
+      "aliases": [
+        "VERX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VERX"
+    },
+    "VRNS US": {
+      "aliases": [
+        "VRNS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VRNS"
+    },
+    "VRSK US": {
+      "aliases": [
+        "VRSK"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VRSK"
+    },
+    "VRSN US": {
+      "aliases": [
+        "VRSN"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VRSN"
+    },
+    "VSAT US": {
+      "aliases": [
+        "VSAT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VSAT"
+    },
+    "VZ US": {
+      "aliases": [
+        "VZ"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "VZ"
+    },
+    "W US": {
+      "aliases": [
+        "W"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "W"
+    },
+    "WDAY US": {
+      "aliases": [
+        "WDAY"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "WDAY"
+    },
+    "WDC US": {
+      "aliases": [
+        "WDC"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "WDC"
+    },
+    "WISE LN": {
+      "aliases": [
+        "WISEA"
+      ],
+      "confidence": "resolved",
+      "name": "Wise plc",
+      "status": "live",
+      "yf": "WISE.L"
+    },
+    "WIT US": {
+      "aliases": [
+        "WIT"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "WIT"
+    },
+    "WIX US": {
+      "aliases": [
+        "WIX"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "WIX"
+    },
+    "WKL NA": {
+      "aliases": [
+        "WLSNC"
+      ],
+      "confidence": "resolved",
+      "name": "Wolters Kluwer",
+      "status": "live",
+      "yf": "WKL.AS"
+    },
+    "WNS US": {
+      "aliases": [
+        "WNS"
+      ],
+      "confidence": "resolved",
+      "note": "Acquired by Capgemini; delisted from NYSE",
+      "status": "acquired",
+      "status_date": "2025-10-17",
+      "yf": null
+    },
+    "WSM US": {
+      "aliases": [
+        "WSM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "WSM"
+    },
+    "WSP CN": {
+      "aliases": [
+        "WSP"
+      ],
+      "confidence": "resolved",
+      "name": "WSP Global",
+      "status": "live",
+      "yf": "WSP.TO"
+    },
+    "WTC AU": {
+      "aliases": [
+        "WTC"
+      ],
+      "confidence": "resolved",
+      "name": "WiseTech Global",
+      "status": "live",
+      "yf": "WTC.AX"
+    },
+    "XYZ US": {
+      "aliases": [
+        "XYZ"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "XYZ"
+    },
+    "YOU US": {
+      "aliases": [
+        "YOU"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "YOU"
+    },
+    "Z US": {
+      "aliases": [
+        "Z"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "Z"
+    },
+    "ZBRA US": {
+      "aliases": [
+        "ZBRA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ZBRA"
+    },
+    "ZETA US": {
+      "aliases": [
+        "ZETA"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ZETA"
+    },
+    "ZIP US": {
+      "aliases": [
+        "ZIP"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ZIP"
+    },
+    "ZM US": {
+      "aliases": [
+        "ZM"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ZM"
+    },
+    "ZS US": {
+      "aliases": [
+        "ZS"
+      ],
+      "confidence": "assumed",
+      "status": "live",
+      "yf": "ZS"
+    }
+  }
+}

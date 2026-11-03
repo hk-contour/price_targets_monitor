@@ -85,32 +85,28 @@ CONFIG = {
     "csv_path":            "Contour-Price-Targets.csv",
     "portfolio_12mo_path": "portfolio_12mo.json",   # Lightkeeper 12-month membership snapshot
     "analyst_map_path":    "analyst_map.json",
+    "ticker_master_path":  "ticker_master.json",    # BBG-keyed identifier + status map
     "state_path":          "stale_alerts_state.json",
 
     # Warn in the summary email if the membership snapshot is older than this.
     "portfolio_snapshot_max_age_days": 45,
 }
 
-# ── Ticker overrides (shared with monitor.py) ─────────────────────────────────
-NUMERIC_TICKERS = {
-    "8136": ("8136.T", "JP"),  "6098": ("6098.T", "JP"),
-    "7974": ("7974.T", "JP"),  "7751": ("7751.T", "JP"),
-    "4324": ("4324.T", "JP"),  "6981": ("6981.T", "JP"),
-    "6963": ("6963.T", "JP"),  "6857": ("6857.T", "JP"),
-    "4661": ("4661.T", "JP"),  "6594": ("6594.T", "JP"),
-    "6752": ("6752.T", "JP"),  "2330": ("2330.TW", "TT"),
-    "3034": ("3034.TW", "TT"),
-}
-TICKER_MAP = {
-    "IFXGn": "IFX.DE", "SAPG": "SAP.DE",
-    "AG1G": "AG1.F",   "PUBP": "PUB.PA",
-    "WISEa": "WISE.L", "RCIb": "RCI-B.TO",
-}
-SKIP = {
-    "MSCHWCCH","MSCHWCHK","FLTRF","TEPRF","LOOMb","HFGG",
-    "DHER","AUTOA","RMV","TKWY","PSON","TMV","SIM","ITRK",
-    "WLN","ASOS","PRSM LN","JET LN","BCO",
-}
+# ── Identifier map ────────────────────────────────────────────────────────────
+# ticker_master.json is the single source of truth for symbol resolution and
+# corporate-action status. It is keyed on BBG ticker (space form, "IFX GY");
+# the Reuters-ish codes in Contour-Price-Targets.csv and the Lightkeeper
+# blotter codes are ALIASES onto that key.
+#
+# This replaces the old NUMERIC_TICKERS / TICKER_MAP / SKIP dicts, which were
+# matched against already-normalized (uppercased, space-split) tickers -- so
+# every lowercase or spaced key in them ("IFXGn", "WISEa", "RCIb", "LOOMb",
+# "PRSM LN", "JET LN") silently never matched.
+#
+# Regenerate with tools/gen_ticker_master.py; validate with tools/check_tickers.py.
+
+TICKER_BY_BBG:   dict = {}
+TICKER_BY_ALIAS: dict = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOGGING
@@ -130,15 +126,52 @@ log = logging.getLogger(__name__)
 def normalize_ticker(raw: str) -> str:
     return str(raw).strip().upper().split()[0] if raw else ""
 
+
+def load_ticker_master(path: str):
+    """
+    Loads ticker_master.json into TICKER_BY_BBG / TICKER_BY_ALIAS.
+
+    Fatal if missing: without it we cannot tell a delisted name from a
+    mapping bug, and would start guessing symbols.
+    """
+    global TICKER_BY_BBG, TICKER_BY_ALIAS
+    if not os.path.exists(path):
+        log.error(f"Ticker master not found: {path} — aborting rather than "
+                  f"guessing symbols. Run tools/gen_ticker_master.py.")
+        raise SystemExit(1)
+    with open(path) as f:
+        doc = json.load(f)
+
+    TICKER_BY_BBG = doc.get("tickers", {})
+    TICKER_BY_ALIAS = {}
+    for bbg, raw_entry in TICKER_BY_BBG.items():
+        entry = {**raw_entry, "bbg": bbg}
+        for alias in entry.get("aliases", []):
+            TICKER_BY_ALIAS[normalize_ticker(alias)] = entry
+
+    meta = doc.get("_meta", {})
+    log.info(f"Loaded {len(TICKER_BY_BBG)} ticker-master entries "
+             f"({len(TICKER_BY_ALIAS)} aliases), generated {meta.get('generated', '?')}.")
+    return meta
+
+
+def resolve_ticker(ticker: str) -> dict | None:
+    """Returns the ticker_master entry for any alias, or None if unmapped."""
+    return TICKER_BY_ALIAS.get(normalize_ticker(ticker))
+
 def yf_symbol(ticker: str) -> str:
-    if ticker in NUMERIC_TICKERS:
-        return NUMERIC_TICKERS[ticker][0]
-    return TICKER_MAP.get(ticker, ticker)
+    e = resolve_ticker(ticker)
+    return e["yf"] if e and e.get("yf") else ticker
 
 def display_ticker(ticker: str) -> str:
-    if ticker in NUMERIC_TICKERS:
-        return f"{ticker} {NUMERIC_TICKERS[ticker][1]}"
-    return ticker
+    """BBG ticker for display — the firm's canonical identifier."""
+    e = resolve_ticker(ticker)
+    return e["bbg"] if e else ticker
+
+def ticker_status(ticker: str) -> str:
+    """'live', a corporate-action status ('acquired'/'private'/...), or 'unmapped'."""
+    e = resolve_ticker(ticker)
+    return e.get("status", "live") if e else "unmapped"
 
 def _to_float(v):
     try:
@@ -149,17 +182,23 @@ def _to_float(v):
 
 def fetch_price(ticker: str):
     """Returns (price, error_reason) — price is None on failure."""
-    if ticker in SKIP:
-        return None, "in skip list"
     sym = yf_symbol(ticker)
     try:
         hist = yf.Ticker(sym).history(period="1mo", auto_adjust=True)
         if hist.empty:
-            return None, "no history returned"
-        price = round(float(hist["Close"].iloc[-1]), 2)
-        data_age = (date.today() - hist.index[-1].date()).days
+            return None, f"no history returned for {sym}"
+        # Some venues (Korea, Taiwan) return a trailing bar with a NaN close.
+        # A NaN price fails every comparison silently, so the name would never
+        # flag and never be reported — drop to the last VALID close instead.
+        closes = hist["Close"].dropna()
+        if closes.empty:
+            return None, f"no valid close in last month for {sym}"
+        price = round(float(closes.iloc[-1]), 2)
+        if price <= 0:
+            return None, f"non-positive close {price} for {sym}"
+        data_age = (date.today() - closes.index[-1].date()).days
         if data_age > 5:
-            return None, f"data is {data_age} days stale"
+            return None, f"data is {data_age} days stale ({sym})"
         return price, None
     except Exception as e:
         return None, str(e)
@@ -507,8 +546,27 @@ ANALYST_NAMES = {
     "BT": "Brian Thackray", "MS": "Mit Shah", "BK": "Bronson Kussin",
 }
 
+def _mini_table(title: str, subtitle: str, colour: str, headers: list, rows: str) -> str:
+    """Compact section used for the summary email's housekeeping blocks."""
+    ths = "".join(
+        f"<th style='padding:6px 10px;font-size:12px;text-align:"
+        f"{'right' if h.startswith('>') else 'left'}'>{h.lstrip('>')}</th>"
+        for h in headers
+    )
+    return (
+        f"<p style='font-family:Arial,sans-serif;font-size:13px;font-weight:600;"
+        f"color:{colour};margin-top:20px'>{title}</p>"
+        f"<p style='font-family:Arial,sans-serif;font-size:12px;color:#777;margin:2px 0 8px'>"
+        f"{subtitle}</p>"
+        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;width:100%'>"
+        f"<thead><tr style='background:{colour};color:white'>{ths}</tr></thead>"
+        f"<tbody>{rows}</tbody></table>"
+    )
+
+
 def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
                         needs_analyst: list, price_errors: list,
+                        corporate_actions: list, unmapped: list,
                         snapshot_warning: str, pf_meta: dict) -> str:
     """Audit-trail summary to hari: what was sent, what was excluded, what failed."""
     today_str = date.today().strftime("%B %d, %Y")
@@ -599,6 +657,47 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
             f"</tr></thead><tbody>{gap_rows}</tbody></table>"
         )
 
+    # ── Corporate actions: covered but no longer tradeable ─────────────────────
+    ca_html = ""
+    if corporate_actions:
+        ca_rows = "".join(
+            f"<tr>"
+            f"<td style='{td}'><b>{display_ticker(c['ticker'])}</b></td>"
+            f"<td style='{td}'>{ANALYST_NAMES.get(c['analyst'], c['analyst'])}</td>"
+            f"<td style='{td};color:#555'>{c['status']}</td>"
+            f"<td style='{td};color:#888'>{c['date']}</td>"
+            f"<td style='{td};color:#555;font-size:12px'>{c['note']}"
+            f"{' &rarr; ' + c['successor'] if c['successor'] else ''}</td>"
+            f"</tr>"
+            for c in sorted(corporate_actions, key=lambda x: x["date"], reverse=True)
+        )
+        ca_html = _mini_table(
+            f"Corporate actions — no longer tradeable ({len(corporate_actions)})",
+            "These are still mapped to an analyst but cannot be priced. Remove them "
+            "from analyst_map.json, or point coverage at the successor.",
+            "#6b21a8",
+            ["Ticker", "Analyst", "Status", "Date", "Detail"],
+            ca_rows,
+        )
+
+    # ── Unmapped: covered but absent from ticker_master.json ───────────────────
+    unmapped_html = ""
+    if unmapped:
+        um_rows = "".join(
+            f"<tr><td style='{td}'><b>{u['ticker']}</b></td>"
+            f"<td style='{td}'>{ANALYST_NAMES.get(u['analyst'], u['analyst'])}</td>"
+            f"<td style='{td};color:#c0392b'>{u['age_days']}d</td></tr>"
+            for u in sorted(unmapped, key=lambda x: -x["age_days"])
+        )
+        unmapped_html = _mini_table(
+            f"Not in ticker_master.json ({len(unmapped)})",
+            "Covered by an analyst but absent from the identifier map, so not priced. "
+            "Add them via tools/gen_ticker_master.py.",
+            "#0e7490",
+            ["Ticker", "Analyst", ">PT Age"],
+            um_rows,
+        )
+
     # ── SAFEGUARD 3: price fetch failures ──────────────────────────────────────
     err_html = ""
     if price_errors:
@@ -642,8 +741,10 @@ def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
 {snap_banner}
 {alerts_table}
 {gap_html}
-{excl_html}
 {err_html}
+{ca_html}
+{unmapped_html}
+{excl_html}
 <p style="font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:16px">
   Flag rule (both required): PT not updated in ≥ {CONFIG['stale_age_days']}d AND price {int(CONFIG['price_drift_pct']*100)}%+
   outside the target range (above the upside PT or below the downside PT). A price within the band, or a
@@ -717,6 +818,7 @@ def run():
     log.info(f"Stale PT alert run — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
     log.info(f"Test mode: {CONFIG['test_mode']} → emails to: {CONFIG['test_email'] if CONFIG['test_mode'] else 'analysts'}")
 
+    tm_meta            = load_ticker_master(CONFIG["ticker_master_path"])
     targets            = load_targets(CONFIG["csv_path"])
     portfolio, pf_meta = load_portfolio_12mo(CONFIG["portfolio_12mo_path"])
     analyst_map        = load_analyst_map(CONFIG["analyst_map_path"])
@@ -738,6 +840,8 @@ def run():
     price_errors      = []
     skipped_no_port   = []    # stale names dropped ONLY for not being in portfolio
     needs_analyst     = []    # IN portfolio + age-stale but no analyst assigned (gap to fill)
+    corporate_actions = []    # covered names that are no longer tradeable
+    unmapped          = []    # covered names with no ticker_master entry
     skipped_acked     = []
     skipped_done      = []
     skipped_wait      = []
@@ -776,12 +880,34 @@ def run():
                 })
             continue
 
+        # ── Filter 3: must still be tradeable ─────────────────────────────────
+        # A delisted name cannot be priced, so it would otherwise reappear as a
+        # price-fetch failure every week and bury the real mapping bugs. Report
+        # it once, in its own section, so coverage can actually be cleaned up.
+        status = ticker_status(ticker)
+        if status == "unmapped":
+            unmapped.append({"ticker": ticker, "analyst": analyst_code,
+                             "age_days": info["age_days"]})
+            log.warning(f"  {ticker}: no ticker_master entry — not priced")
+            continue
+        if status != "live":
+            entry = resolve_ticker(ticker) or {}
+            corporate_actions.append({
+                "ticker":   ticker,
+                "analyst":  analyst_code,
+                "status":   status,
+                "date":     entry.get("status_date", ""),
+                "note":     entry.get("note", ""),
+                "successor": entry.get("successor", ""),
+            })
+            log.info(f"  {ticker}: {status} ({entry.get('status_date','?')}) — excluded")
+            continue
+
         # ── Fetch live price ──────────────────────────────────────────────────
         price, err = fetch_price(ticker)
         if price is None:
-            if ticker not in SKIP:
-                price_errors.append((ticker, err))
-                log.warning(f"  {ticker}: price fetch failed — {err}")
+            price_errors.append((ticker, err))
+            log.warning(f"  {ticker}: price fetch failed — {err}")
             continue
 
         # ── Check staleness (split-adjusted) ──────────────────────────────────
@@ -826,6 +952,8 @@ def run():
     log.info(f"\nResults: {total_alerts} alerts | "
              f"excluded_not_in_portfolio={len(skipped_no_port)} | "
              f"in_portfolio_needs_analyst={len(needs_analyst)} | "
+             f"corporate_actions={len(corporate_actions)} | "
+             f"unmapped={len(unmapped)} | "
              f"acked={len(skipped_acked)} | "
              f"done={len(skipped_done)} | "
              f"waiting={len(skipped_wait)} | "
@@ -876,7 +1004,7 @@ def run():
     # ── Always send a run-summary to hari (audit trail + safeguards) ───────────
     summary_html = build_summary_email(
         analyst_alerts, skipped_no_port, needs_analyst,
-        price_errors, snapshot_warning, pf_meta
+        price_errors, corporate_actions, unmapped, snapshot_warning, pf_meta
     )
     summary_subject = f"Stale PT Alert Summary - {today.strftime('%b %d')} - {total_alerts} alert(s)"
     send_email(summary_html, summary_subject, CONFIG["test_email"])
