@@ -118,3 +118,25 @@ python3 tools/gen_earnings_dates.py ~/Downloads/earnings_cal
 
 `stale_alerts.py` warns in the summary email once this file is more than
 `earnings_snapshot_max_age_days` (14) old.
+
+## gen_portfolio_current.py
+
+Builds `portfolio_current.json` — what the book holds **today**. Companion to
+`portfolio_12mo.json`; together they let the summary email separate three
+cohorts that read very differently:
+
+| cohort | meaning |
+|---|---|
+| in the portfolio now | a stale target here is live risk |
+| traded in last 12 months, not held today | refresh the target or retire coverage |
+| covered, never held in 12 months | earnings-trigger process reminder (e.g. HOOD) |
+
+Lightkeeper pull: `delta-adjusted-net-exposure`, `netTimeMethod=end`,
+`rollup=Issuer`, `return_what=itmValues`, single date = the latest valid
+portfolio date. Save the rows as
+`tools/lk_pulls/current_exposure_<date>.json`, update `PULL` / `AS_OF` at the
+top of the script, then run it. A zero exposure counts as NOT held.
+
+```bash
+python3 tools/gen_portfolio_current.py
+```

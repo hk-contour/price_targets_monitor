@@ -118,6 +118,7 @@ CONFIG = {
     # ── File paths (relative to repo root) ───────────────────────────────────
     "csv_path":            "Contour-Price-Targets.csv",
     "portfolio_12mo_path": "portfolio_12mo.json",   # Lightkeeper 12-month membership snapshot
+    "portfolio_current_path": "portfolio_current.json",  # what the book holds today
     "analyst_map_path":    "analyst_map.json",
     "ticker_master_path":  "ticker_master.json",    # BBG-keyed identifier + status map
     "earnings_dates_path": "earnings_dates.json",   # who has reported recently
@@ -316,6 +317,27 @@ def load_portfolio_12mo(path: str) -> tuple[set, dict]:
     meta = data.get("_meta", {})
     log.info(f"Loaded {len(tickers)} tickers from 12-month portfolio snapshot "
              f"(generated {meta.get('generated', '?')}).")
+    return tickers, meta
+
+
+def load_portfolio_current(path: str) -> tuple[set, dict]:
+    """
+    Loads the current-holdings snapshot (portfolio_current.json).
+
+    Optional: if it is missing, every alert is reported under the 12-month
+    heading rather than split by current holding. Regenerate with
+    tools/gen_portfolio_current.py.
+    """
+    if not os.path.exists(path):
+        log.warning(f"Current-holdings snapshot not found: {path} — alerts will not "
+                    f"be split by current holding.")
+        return set(), {}
+    with open(path) as f:
+        data = json.load(f)
+    tickers = {normalize_ticker(t) for t in data.get("tickers", [])}
+    meta = data.get("_meta", {})
+    log.info(f"Loaded {len(tickers)} currently-held tickers "
+             f"(as of {meta.get('as_of', '?')}).")
     return tickers, meta
 
 
@@ -669,37 +691,65 @@ def _mini_table(title: str, subtitle: str, colour: str, headers: list, rows: str
 def build_summary_email(all_analyst_alerts: dict, skipped_no_port: list,
                         needs_analyst: list, price_errors: list,
                         corporate_actions: list, unmapped: list,
-                        snapshot_warning: str, pf_meta: dict) -> str:
+                        snapshot_warning: str, pf_meta: dict,
+                        cur_meta: dict) -> str:
     """Audit-trail summary to hari: what was sent, what was excluded, what failed."""
     today_str = date.today().strftime("%B %d, %Y")
     td = "padding:6px 10px;font-size:13px;border-bottom:1px solid #f0f0f0"
 
-    # ── Alerts sent ────────────────────────────────────────────────────────────
-    rows = ""
-    for analyst_code, entries in sorted(all_analyst_alerts.items()):
-        for e in entries:
-            rows += (
-                f"<tr>"
-                f"<td style='{td}'>{ANALYST_NAMES.get(analyst_code, analyst_code)}</td>"
-                f"<td style='{td}'><b>{display_ticker(e['ticker'])}</b></td>"
-                f"<td style='{td};text-align:right'>${e['price']:.2f}</td>"
-                f"<td style='{td};color:#c0392b'>{e['age_days']}d old</td>"
-                f"<td style='{td};color:#555;font-size:12px'>{'; '.join(e['reasons'])}</td>"
-                f"<td style='{td}'>{e['nudge']}</td>"
-                f"</tr>"
-            )
-    total = sum(len(v) for v in all_analyst_alerts.values())
+    # ── Alerts sent, split by what the book actually holds ─────────────────────
+    # Hari reads these differently: a nudge on a name the book owns today is
+    # live risk, one on a name we exited is housekeeping, and one on a covered
+    # name we have never held is purely a process reminder.
+    flat = [dict(e, analyst=code)
+            for code, entries in sorted(all_analyst_alerts.items())
+            for e in entries]
+    total = len(flat)
+
+    def cohort_table(key, title, subtitle, colour):
+        entries = [e for e in flat if e.get("holding") == key]
+        if not entries:
+            return ""
+        rows = "".join(
+            f"<tr>"
+            f"<td style='{td}'>{ANALYST_NAMES.get(e['analyst'], e['analyst'])}</td>"
+            f"<td style='{td}'><b>{display_ticker(e['ticker'])}</b></td>"
+            f"<td style='{td};text-align:right'>${e['price']:.2f}</td>"
+            f"<td style='{td};color:#c0392b'>{e['age_days']}d old</td>"
+            f"<td style='{td};color:#555;font-size:12px'>{'; '.join(e['reasons'])}</td>"
+            f"<td style='{td}'>{e['nudge']}</td>"
+            f"</tr>"
+            for e in sorted(entries, key=lambda x: (x["analyst"], x["ticker"]))
+        )
+        return (
+            f"<p style='font-family:Arial,sans-serif;font-size:13px;font-weight:600;"
+            f"color:{colour};margin-top:20px'>{title} ({len(entries)})</p>"
+            f"<p style='font-family:Arial,sans-serif;font-size:12px;color:#777;margin:2px 0 8px'>"
+            f"{subtitle}</p>"
+            f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;width:100%'>"
+            f"<thead><tr style='background:{colour};color:white'>"
+            f"<th style='padding:8px 10px;font-size:12px;text-align:left'>Analyst</th>"
+            f"<th style='padding:8px 10px;font-size:12px;text-align:left'>Ticker</th>"
+            f"<th style='padding:8px 10px;font-size:12px;text-align:right'>Price</th>"
+            f"<th style='padding:8px 10px;font-size:12px'>PT Age</th>"
+            f"<th style='padding:8px 10px;font-size:12px'>Reason</th>"
+            f"<th style='padding:8px 10px;font-size:12px'>Nudge #</th>"
+            f"</tr></thead><tbody>{rows}</tbody></table>"
+        )
+
+    as_of = cur_meta.get("as_of", "?")
     alerts_table = (
-        f"<table style='border-collapse:collapse;font-family:Arial,sans-serif;width:100%'>"
-        f"<thead><tr style='background:#1a3c6e;color:white'>"
-        f"<th style='padding:8px 10px;font-size:12px;text-align:left'>Analyst</th>"
-        f"<th style='padding:8px 10px;font-size:12px;text-align:left'>Ticker</th>"
-        f"<th style='padding:8px 10px;font-size:12px;text-align:right'>Price</th>"
-        f"<th style='padding:8px 10px;font-size:12px'>PT Age</th>"
-        f"<th style='padding:8px 10px;font-size:12px'>Reason</th>"
-        f"<th style='padding:8px 10px;font-size:12px'>Nudge #</th>"
-        f"</tr></thead><tbody>{rows}</tbody></table>"
-        if rows else
+        cohort_table("current", "In the portfolio now",
+                     f"Held as of {as_of}. A stale target here is live risk.",
+                     "#1a3c6e")
+        + cohort_table("past12m", "Not held today, but traded in the last 12 months",
+                       "Out of the book now. Refresh the target or retire coverage.",
+                       "#0f766e")
+        + cohort_table("coverage", "Covered, but not held in the last 12 months",
+                       "Flagged by the earnings trigger, which follows coverage rather "
+                       "than the book. Process reminder only.",
+                       "#7c5e10")
+    ) or (
         "<p style='font-family:Arial,sans-serif;font-size:13px;color:#777'>"
         "<i>No stale alerts sent this run.</i></p>"
     )
@@ -923,6 +973,7 @@ def run():
     tm_meta            = load_ticker_master(CONFIG["ticker_master_path"])
     targets            = load_targets(CONFIG["csv_path"])
     portfolio, pf_meta = load_portfolio_12mo(CONFIG["portfolio_12mo_path"])
+    held_now, cur_meta = load_portfolio_current(CONFIG["portfolio_current_path"])
     analyst_map        = load_analyst_map(CONFIG["analyst_map_path"])
     earnings, earn_meta = load_earnings_dates(CONFIG["earnings_dates_path"])
     state              = load_state(CONFIG["state_path"])
@@ -1064,6 +1115,9 @@ def run():
             "nudge":     nudge_num,
             "is_second": is_second,
             "earnings":  bool(earn_reason),
+            "holding":   ("current"  if ticker in held_now
+                          else "past12m" if in_portfolio
+                          else "coverage"),
         }
 
         analyst_alerts.setdefault(analyst_code, []).append(alert_entry)
@@ -1127,7 +1181,8 @@ def run():
     # ── Always send a run-summary to hari (audit trail + safeguards) ───────────
     summary_html = build_summary_email(
         analyst_alerts, skipped_no_port, needs_analyst,
-        price_errors, corporate_actions, unmapped, snapshot_warning, pf_meta
+        price_errors, corporate_actions, unmapped, snapshot_warning,
+        pf_meta, cur_meta
     )
     summary_subject = f"Stale PT Alert Summary - {today.strftime('%b %d')} - {total_alerts} alert(s)"
     send_email(summary_html, summary_subject, CONFIG["test_email"])
