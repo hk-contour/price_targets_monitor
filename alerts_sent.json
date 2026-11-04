@@ -288,6 +288,7 @@
     "EXLS",
     "EXPE",
     "FOXA",
+    "GEV",
     "GRMN",
     "HOOD",
     "HPE",
@@ -300,11 +301,11 @@
     "MANH",
     "META",
     "MKSI",
+    "NVDA",
     "PCOR",
     "PUBP",
     "RHI",
     "ROP",
-    "SEZL",
     "SHOP",
     "SNDK",
     "SPHR",
@@ -315,6 +316,7 @@
     "TYL",
     "VRSK",
     "WSM",
+    "YOU",
     "Z"
   ]
 }
