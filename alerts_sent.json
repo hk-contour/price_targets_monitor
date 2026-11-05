@@ -275,7 +275,6 @@
     "ANET",
     "BSY",
     "CART",
-    "CDW",
     "CNXC",
     "CTAS",
     "DUOL",
@@ -314,6 +313,7 @@
     "VRSK",
     "WSM",
     "XYZ",
-    "Z"
+    "Z",
+    "ZM"
   ]
 }
