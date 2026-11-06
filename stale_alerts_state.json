@@ -1,13 +1,33 @@
 {
   "acknowledged": {},
   "first_alert": {
+    "000660": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "005930": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
     "4324": {
       "analyst": "BK",
       "date": "2026-07-29"
     },
+    "5802": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
     "6098": {
       "analyst": "BK",
       "date": "2026-07-29"
+    },
+    "6857": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "6981": {
+      "analyst": "MS",
+      "date": "2026-11-06"
     },
     "7974": {
       "analyst": "SS",
@@ -21,17 +41,21 @@
       "analyst": "MS",
       "date": "2026-07-29"
     },
+    "ADP": {
+      "analyst": "SS",
+      "date": "2026-11-06"
+    },
     "AMAT": {
       "analyst": "MS",
       "date": "2026-07-29"
     },
     "AMD": {
       "analyst": "MS",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "AMZN": {
       "analyst": "MS",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "ANET": {
       "analyst": "MS",
@@ -47,7 +71,7 @@
     },
     "BKNG": {
       "analyst": "SS",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "BL": {
       "analyst": "BT",
@@ -57,6 +81,10 @@
       "analyst": "BT",
       "date": "2026-07-29"
     },
+    "BWA": {
+      "analyst": "JEC",
+      "date": "2026-11-06"
+    },
     "CBZ": {
       "analyst": "BK",
       "date": "2026-07-29"
@@ -64,6 +92,14 @@
     "CGNX": {
       "analyst": "BT",
       "date": "2026-07-29"
+    },
+    "CHH": {
+      "analyst": "SS",
+      "date": "2026-11-06"
+    },
+    "CHKP": {
+      "analyst": "MS",
+      "date": "2026-11-06"
     },
     "CHYM": {
       "analyst": "JC",
@@ -91,7 +127,11 @@
     },
     "CSGP": {
       "analyst": "JC",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
+    },
+    "CTSH": {
+      "analyst": "BK",
+      "date": "2026-11-06"
     },
     "CVLT": {
       "analyst": "MS",
@@ -99,7 +139,11 @@
     },
     "CVNA": {
       "analyst": "BK",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
+    },
+    "DAST": {
+      "analyst": "BT",
+      "date": "2026-11-06"
     },
     "DDOG": {
       "analyst": "MS",
@@ -111,11 +155,11 @@
     },
     "DT": {
       "analyst": "MS",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "DUOL": {
       "analyst": "JC",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "DV": {
       "analyst": "SS",
@@ -123,11 +167,19 @@
     },
     "ETSY": {
       "analyst": "JC",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "FIG": {
       "analyst": "BT",
       "date": "2026-07-29"
+    },
+    "FOXA": {
+      "analyst": "SS",
+      "date": "2026-11-06"
+    },
+    "GDDY": {
+      "analyst": "JC",
+      "date": "2026-11-06"
     },
     "GTM": {
       "analyst": "BT",
@@ -136,6 +188,10 @@
     "GWRE": {
       "analyst": "BT",
       "date": "2026-07-29"
+    },
+    "HOOD": {
+      "analyst": "JC",
+      "date": "2026-11-06"
     },
     "HUBS": {
       "analyst": "BT",
@@ -153,6 +209,10 @@
       "analyst": "BT",
       "date": "2026-07-29"
     },
+    "LRCX": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
     "MDB": {
       "analyst": "MS",
       "date": "2026-07-29"
@@ -165,9 +225,17 @@
       "analyst": "MS",
       "date": "2026-07-29"
     },
+    "NET": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
     "NOK": {
       "analyst": "MS",
       "date": "2026-07-29"
+    },
+    "NOKIA": {
+      "analyst": "MS",
+      "date": "2026-11-06"
     },
     "NTAP": {
       "analyst": "MS",
@@ -183,7 +251,7 @@
     },
     "ON": {
       "analyst": "MS",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "ORCL": {
       "analyst": "BT",
@@ -213,6 +281,14 @@
       "analyst": "BT",
       "date": "2026-07-29"
     },
+    "PLTR": {
+      "analyst": "BT",
+      "date": "2026-11-06"
+    },
+    "PYPL": {
+      "analyst": "JC",
+      "date": "2026-11-06"
+    },
     "QCOM": {
       "analyst": "MS",
       "date": "2026-07-29"
@@ -221,9 +297,21 @@
       "analyst": "MS",
       "date": "2026-07-29"
     },
+    "RBLX": {
+      "analyst": "SS",
+      "date": "2026-11-06"
+    },
+    "REL": {
+      "analyst": "BK",
+      "date": "2026-11-06"
+    },
     "RNG": {
       "analyst": "BT",
       "date": "2026-07-29"
+    },
+    "ROP": {
+      "analyst": "BT",
+      "date": "2026-11-06"
     },
     "RUN": {
       "analyst": "SS",
@@ -232,6 +320,34 @@
     "SNAP": {
       "analyst": "SS",
       "date": "2026-07-29"
+    },
+    "SNDK": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "SOFI": {
+      "analyst": "JC",
+      "date": "2026-11-06"
+    },
+    "STM": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "STX": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "TER": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "TSM": {
+      "analyst": "MS",
+      "date": "2026-11-06"
+    },
+    "TYL": {
+      "analyst": "BT",
+      "date": "2026-11-06"
     },
     "UPS": {
       "analyst": "JC",
@@ -251,7 +367,7 @@
     },
     "VRNS": {
       "analyst": "MS",
-      "date": "2026-07-29"
+      "date": "2026-11-06"
     },
     "YOU": {
       "analyst": "SS",
