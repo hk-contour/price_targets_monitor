@@ -51,7 +51,7 @@
     },
     "AMD": {
       "analyst": "MS",
-      "date": "2026-11-13"
+      "date": "2026-11-20"
     },
     "AMZN": {
       "analyst": "MS",
@@ -127,7 +127,7 @@
     },
     "CSGP": {
       "analyst": "JC",
-      "date": "2026-11-13"
+      "date": "2026-11-20"
     },
     "CTSH": {
       "analyst": "BK",
@@ -155,7 +155,7 @@
     },
     "DT": {
       "analyst": "MS",
-      "date": "2026-11-13"
+      "date": "2026-11-20"
     },
     "DUOL": {
       "analyst": "JC",
@@ -167,7 +167,7 @@
     },
     "ETSY": {
       "analyst": "JC",
-      "date": "2026-11-13"
+      "date": "2026-11-20"
     },
     "FIG": {
       "analyst": "BT",
@@ -550,6 +550,10 @@
     "PAYC": {
       "analyst": "SS",
       "date": "2026-10-23"
+    },
+    "PEGA": {
+      "analyst": "BT",
+      "date": "2026-11-20"
     },
     "PLTR": {
       "analyst": "BT",
